@@ -1,0 +1,31 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+
+# Large datasets
+datasets/
+data/
+
+# Model files
+*.h5
+*.pt
+*.pth
+*.ckpt
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+
+# VS Code settings
+.vscode/
