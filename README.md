@@ -1,4 +1,4 @@
-# University-of-Colorado-Boulder---MSc-Artificial-Intelligence
+# MSc-Artificial-Intelligence (Univeristy of Colorado Boulder)
 This repository contains coursework, assignments, and projects completed as part of the Master of Science in Artificial Intelligence (MS-AI) program. The program provides an in-depth exploration of the theory, tools, and practical applications of artificial intelligence, enabling learners to specialize in AI and machine learning and engage with technologies at the forefront of innovation.
 
 Program Focus
