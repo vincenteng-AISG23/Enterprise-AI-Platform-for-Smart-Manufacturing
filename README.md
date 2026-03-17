@@ -1,6 +1,6 @@
-# Vincent Eng – AI & Digital Transformation Portfolio
+# Vincent Eng â€“ AI & Digital Transformation Portfolio
 
-## ????? Profile
+## Profile
 Group Head of IT with leadership experience in Smart Manufacturing, Digital Transformation, Cloud Architecture, Data Governance, and Cybersecurity across regional manufacturing environments.
 
 I focus on bridging business strategy with technology execution, especially in:
@@ -12,7 +12,7 @@ I focus on bridging business strategy with technology execution, especially in:
 
 ---
 
-## ?? Key Areas
+## Key Areas
 - AI / Machine Learning
 - Smart Manufacturing (MES, IoT)
 - Cloud Architecture (Azure)
@@ -22,7 +22,7 @@ I focus on bridging business strategy with technology execution, especially in:
 
 ---
 
-## ?? Portfolio Sections
+## Portfolio Sections
 - [AI Foundations](./01-AI-Foundations)
 - [Projects](./02-Projects)
 - [Smart Manufacturing](./03-Smart-Manufacturing)
@@ -33,7 +33,7 @@ I focus on bridging business strategy with technology execution, especially in:
 
 ---
 
-## ?? Featured Project
+## Featured Project
 ### Predictive Maintenance for Smart Factory
 A practical AI use case focused on predicting equipment failure before breakdown occurs, using machine learning, sensor data, and maintenance history.
 
@@ -55,7 +55,7 @@ A practical AI use case focused on predicting equipment failure before breakdown
 
 ---
 
-## ?? Smart Manufacturing Focus
+## Smart Manufacturing Focus
 My portfolio emphasizes how AI can be applied in real manufacturing environments, including:
 - Predictive maintenance
 - Quality analytics
@@ -67,7 +67,7 @@ My portfolio emphasizes how AI can be applied in real manufacturing environments
 
 ---
 
-## ?? Cloud and Enterprise Technology Focus
+## Cloud and Enterprise Technology Focus
 This portfolio also reflects practical enterprise technology capabilities in:
 - Microsoft Azure
 - Azure Data Factory
@@ -79,7 +79,7 @@ This portfolio also reflects practical enterprise technology capabilities in:
 
 ---
 
-## ?? Purpose of This Portfolio
+## Purpose of This Portfolio
 This repository serves as:
 - A structured AI knowledge base
 - A professional portfolio of AI and digital transformation work
@@ -88,6 +88,6 @@ This repository serves as:
 
 ---
 
-## ?? Contact
+## Contact
 **Vincent Eng**  
 Group Head of IT | AI & Digital Transformation Leader
