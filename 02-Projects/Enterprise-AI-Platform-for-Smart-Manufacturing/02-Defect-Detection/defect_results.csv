@@ -1,0 +1,11 @@
+product_id,defect_type,confidence,inspection_result
+P001,Crack,0.92,Defective
+P002,Scratch,0.85,Defective
+P003,None,0.10,Pass
+P004,Porosity,0.78,Defective
+P005,None,0.05,Pass
+P006,Crack,0.88,Defective
+P007,None,0.12,Pass
+P008,Scratch,0.81,Defective
+P009,None,0.07,Pass
+P010,Porosity,0.76,Defective
