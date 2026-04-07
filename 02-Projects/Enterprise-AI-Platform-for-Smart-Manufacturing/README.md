@@ -88,6 +88,54 @@ This transforms AI into a **decision-support system**, not just a technical mode
 - Enable proactive production planning
 - Reduce inventory inefficiencies
 
+## 🧩 Architecture Overview
+ERP / MES / IoT Sensors / Inspection Data / Demand Data
+↓
+Data Processing & Feature Engineering
+↓
+Machine Learning Models (by Use Case)
+↓
+Business Logic / KPI Layer / Risk Scoring
+↓
+Executive AI Control Tower (Streamlit)
+
+## 🛠 Technology Stack
+
+- Python
+- Streamlit
+- Scikit-learn
+- Pandas
+- Matplotlib
+- Joblib
+
 ---
 
-## 🧩 Architecture Overview
+## 📂 Project Structure
+
+
+AI-Learning-Journey/
+│
+├── 01-Predictive-Maintenance/
+│ ├── train_model.py
+│ ├── model.pkl
+│ └── sample_machine_data.csv
+│
+├── 02-Defect-Detection/
+│ ├── sample data / images
+│
+├── 03-Demand-Forecasting/
+│ └── demand_forecast_sample.csv
+│
+├── app.py
+├── README.md
+
+
+---
+
+## ▶️ How to Run
+
+```bash
+pip install -r requirements.txt
+python -m streamlit run app.py --server.port 8503
+
+
