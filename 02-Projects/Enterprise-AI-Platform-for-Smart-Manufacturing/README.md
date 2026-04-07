@@ -88,6 +88,8 @@ This transforms AI into a **decision-support system**, not just a technical mode
 - Enable proactive production planning
 - Reduce inventory inefficiencies
 
+---
+
 ## 🧩 Architecture Overview
 ERP / MES / IoT Sensors / Inspection Data / Demand Data
 ↓
@@ -98,6 +100,8 @@ Machine Learning Models (by Use Case)
 Business Logic / KPI Layer / Risk Scoring
 ↓
 Executive AI Control Tower (Streamlit)
+
+---
 
 ## 🛠 Technology Stack
 
