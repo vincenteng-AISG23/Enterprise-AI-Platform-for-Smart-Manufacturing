@@ -123,3 +123,14 @@ print(f"Estimated Downtime Cost: ${estimated_loss}")
 high_risk_count = sum(1 for p in prediction_proba if p[1] > 0.7)
 
 print(f"\n🚨 Machines needing immediate attention: {high_risk_count}")
+
+import joblib
+import os
+
+# Save model inside project folder
+model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+joblib.dump(model, model_path)
+
+
+
+print(f"✅ Model saved at: {model_path}")

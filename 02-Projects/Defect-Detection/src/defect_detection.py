@@ -9,7 +9,8 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 df = pd.read_csv("sample_defect_data.csv")
 
 # Features and target
-X = df.drop(columns=["part_id", "defect"])
+X = df.drop(columns=["defect"], errors="ignore")
+X = X.select_dtypes(include=["number"])
 y = df["defect"]
 
 # Split dataset
