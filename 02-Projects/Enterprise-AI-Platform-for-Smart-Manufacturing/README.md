@@ -91,15 +91,15 @@ This transforms AI into a **decision-support system**, not just a technical mode
 ---
 
 ## 🧩 Architecture Overview
-ERP / MES / IoT Sensors / Inspection Data / Demand Data
-↓
-Data Processing & Feature Engineering
-↓
-Machine Learning Models (by Use Case)
-↓
-Business Logic / KPI Layer / Risk Scoring
-↓
-Executive AI Control Tower (Streamlit)
+- ERP / MES / IoT Sensors / Inspection Data / Demand Data
+- ↓
+- Data Processing & Feature Engineering
+- ↓
+- Machine Learning Models (by Use Case)
+- ↓
+- Business Logic / KPI Layer / Risk Scoring
+- ↓
+- Executive AI Control Tower (Streamlit)
 
 ---
 
