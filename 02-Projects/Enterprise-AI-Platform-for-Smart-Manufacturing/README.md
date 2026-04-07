@@ -115,7 +115,7 @@ This transforms AI into a **decision-support system**, not just a technical mode
 ---
 
 ## 📂 Project Structure
-'''
+---
 AI-Learning-Journey/
 │
 ├── 01-Predictive-Maintenance/
