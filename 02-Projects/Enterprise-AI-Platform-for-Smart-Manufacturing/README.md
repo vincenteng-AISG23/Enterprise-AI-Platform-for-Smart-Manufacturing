@@ -114,8 +114,20 @@ This transforms AI into a **decision-support system**, not just a technical mode
 
 ---
 
+## 🛠 Technology Stack
+
+- Python
+- Streamlit
+- Scikit-learn
+- Pandas
+- Matplotlib
+- Joblib
+
+---
+
 ## 📂 Project Structure
-'''
+
+
 AI-Learning-Journey/
 │
 ├── 01-Predictive-Maintenance/
@@ -131,8 +143,15 @@ AI-Learning-Journey/
 │
 ├── app.py
 ├── README.md
-'''
 
+
+---
+
+## ▶️ How to Run
+
+```bash
+pip install -r requirements.txt
+python -m streamlit run app.py --server.port 8503
 ---
 
 ## ▶️ How to Run
