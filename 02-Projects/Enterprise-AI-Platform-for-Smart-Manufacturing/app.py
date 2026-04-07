@@ -17,22 +17,11 @@ PM_DIR = BASE_DIR / "01-Predictive-Maintenance"
 DD_DIR = BASE_DIR / "02-Defect-Detection"
 DF_DIR = BASE_DIR / "03-Demand-Forecasting"
 
-st.title("Enterprise AI Platform for Smart Manufacturing")
-st.caption("Integrated AI use cases across maintenance, quality, and planning")
-
 # --------------------------------------------------
-# Sidebar navigation
+# Branding
 # --------------------------------------------------
-st.sidebar.title("Platform Navigation")
-module = st.sidebar.radio(
-    "Select Module",
-    [
-        "Executive Overview",
-        "Predictive Maintenance",
-        "Defect Detection",
-        "Demand Forecasting"
-    ]
-)
+PLATFORM_TITLE = "Enterprise AI Platform for Smart Manufacturing"
+PLATFORM_SUBTITLE = "Executive control tower for reliability, quality, and planning"
 
 # --------------------------------------------------
 # Shared helper functions
@@ -44,6 +33,14 @@ def safe_read_csv(path: Path):
     except Exception:
         return None
     return None
+
+
+def classify_risk(probability: float):
+    if probability > 0.7:
+        return "High", "Immediate maintenance required"
+    if probability > 0.4:
+        return "Medium", "Schedule inspection"
+    return "Low", "Continue normal operation"
 
 
 def module_health_status():
@@ -124,100 +121,119 @@ def get_platform_kpis():
     return high_risk_machines, total_risk_exposure, defect_records, forecast_accuracy_display
 
 
-def classify_risk(probability: float):
-    if probability > 0.7:
-        return "High", "Immediate maintenance required"
-    if probability > 0.4:
-        return "Medium", "Schedule inspection"
-    return "Low", "Continue normal operation"
+def executive_banner(title, subtitle):
+    st.markdown(
+        f"""
+<div style="padding:16px 18px; border-radius:10px; background-color:#f6f8fb; border:1px solid #e6eaf0; margin-bottom:14px;">
+    <div style="font-size:28px; font-weight:700; margin-bottom:4px;">{title}</div>
+    <div style="font-size:15px; color:#4b5563;">{subtitle}</div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
+
+def section_header(title):
+    st.markdown(f"### {title}")
+
+
+def info_box(text):
+    st.markdown(
+        f"""
+<div style="padding:12px 14px; border-radius:8px; background-color:#eef6ff; border-left:5px solid #3b82f6; margin-bottom:12px;">
+{text}
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+
+# --------------------------------------------------
+# Header
+# --------------------------------------------------
+st.title(PLATFORM_TITLE)
+st.caption(PLATFORM_SUBTITLE)
+
+# --------------------------------------------------
+# Sidebar navigation
+# --------------------------------------------------
+st.sidebar.title("Navigation")
+module = st.sidebar.radio(
+    "Select View",
+    [
+        "Executive Overview",
+        "Predictive Maintenance",
+        "Defect Detection",
+        "Demand Forecasting"
+    ]
+)
 
 # --------------------------------------------------
 # Executive Overview
 # --------------------------------------------------
 if module == "Executive Overview":
-    st.subheader("Executive Overview")
+    executive_banner(
+        "Executive Overview",
+        "Integrated AI visibility across maintenance, quality, and demand planning"
+    )
 
     high_risk_machines, total_risk_exposure, defect_records, forecast_accuracy_display = get_platform_kpis()
     health = module_health_status()
 
-    st.markdown(
-        """
-This platform demonstrates how AI can be applied across multiple manufacturing domains and consolidated into
-a single executive decision layer for operations, quality, and planning.
-
-It brings together three practical AI use cases:
-
-- **Predictive Maintenance** for reliability improvement  
-- **Defect Detection** for quality enhancement  
-- **Demand Forecasting** for production planning  
+    info_box(
+        f"""
+<strong>Board Summary:</strong> The platform consolidates three AI use cases into one decision layer.
+Current indicators show <strong>{high_risk_machines}</strong> high-risk machine(s), 
+<strong>SGD {total_risk_exposure:,.0f}</strong> estimated maintenance exposure,
+<strong>{defect_records}</strong> defect record(s), and
+forecast accuracy of <strong>{forecast_accuracy_display}</strong>.
 """
     )
 
-    st.markdown("### Platform KPI Summary")
+    section_header("Platform KPI Summary")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("High-Risk Machines", high_risk_machines)
-    k2.metric("Total Risk Exposure", f"SGD {total_risk_exposure:,.0f}")
+    k2.metric("Risk Exposure", f"SGD {total_risk_exposure:,.0f}")
     k3.metric("Defect Records", defect_records)
     k4.metric("Forecast Accuracy", forecast_accuracy_display)
 
-    st.markdown("### Module Health")
+    section_header("Module Health")
     h1, h2, h3 = st.columns(3)
-    h1.metric("Predictive Maintenance", "Active" if health["pm"] else "Missing Files")
-    h2.metric("Defect Detection", "Active" if health["dd"] else "Missing Files")
-    h3.metric("Demand Forecasting", "Active" if health["df"] else "Missing Files")
+    h1.metric("Predictive Maintenance", "Active" if health["pm"] else "Needs Data")
+    h2.metric("Defect Detection", "Active" if health["dd"] else "Needs Data")
+    h3.metric("Demand Forecasting", "Active" if health["df"] else "Needs Data")
 
-    st.markdown("### Platform Overview")
-    p1, p2, p3, p4 = st.columns(4)
-    p1.metric("AI Use Cases", "3")
-    p2.metric("Business Domains", "Reliability / Quality / Planning")
-    p3.metric("Platform Type", "Enterprise AI Portfolio")
-    p4.metric("Decision Layer", "Executive Control Tower")
-
-    st.markdown("### Executive Summary")
-    st.info(
-        f"""
-This platform translates AI outputs into business decision support.
-
-Current indicators suggest:
-- **{high_risk_machines} high-risk machine(s)** identified from available maintenance data
-- **SGD {total_risk_exposure:,.0f}** estimated downtime exposure across the monitored set
-- **{defect_records} defect-related record(s)** available for quality review
-- **Forecast accuracy of {forecast_accuracy_display}** based on available demand planning data
-"""
-    )
-
-    st.markdown("### Strategic Scope")
+    section_header("Strategic Scope")
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown(
             """
-**Operational Focus**
+**Operational Priorities**
 - Improve asset reliability
 - Reduce quality defects
 - Strengthen planning accuracy
-- Increase visibility across operations
+- Increase enterprise visibility
 
-**Transformation Focus**
-- Move from reactive to predictive maintenance
-- Move from manual inspection to AI-assisted quality control
-- Move from historical planning to forecast-driven planning
+**Transformation Shift**
+- Reactive maintenance → predictive maintenance
+- Manual inspection → AI-assisted quality control
+- Historical planning → forecast-led planning
 """
         )
 
     with c2:
         st.markdown(
             """
-**Leadership Focus**
-- Translate AI output into business actions
-- Provide KPI-driven visibility to decision makers
-- Strengthen cross-functional alignment between operations, quality, and planning
-- Demonstrate how AI can support enterprise transformation
+**Leadership Objectives**
+- Translate model output into actions
+- Provide KPI-driven decision support
+- Improve cross-functional coordination
+- Demonstrate measurable business value from AI
 """
         )
 
-    st.markdown("### Business Value")
+    section_header("Business Value")
     b1, b2, b3 = st.columns(3)
 
     with b1:
@@ -234,7 +250,7 @@ Current indicators suggest:
         st.markdown(
             """
 **Quality**
-- Detect faults earlier
+- Detect issues earlier
 - Reduce scrap and rework
 - Improve product consistency
 """
@@ -244,28 +260,28 @@ Current indicators suggest:
         st.markdown(
             """
 **Planning**
-- Improve demand visibility
+- Improve forecast confidence
 - Support production scheduling
 - Reduce planning inefficiencies
 """
         )
 
-    st.markdown("### AI Use Case Portfolio")
+    section_header("AI Use Case Portfolio")
     u1, u2, u3 = st.columns(3)
 
     with u1:
         st.markdown(
             """
 #### Predictive Maintenance
-**Purpose:** predict machine failure risk before breakdown
+**Purpose:** anticipate machine failure risk
 
-**Key Outputs:**
+**Outputs**
 - failure probability
 - risk classification
-- estimated downtime impact
+- downtime impact
 
-**Business Outcome:**
-improved maintenance prioritization and reduced disruption
+**Outcome**
+- better maintenance prioritization
 """
         )
 
@@ -273,15 +289,15 @@ improved maintenance prioritization and reduced disruption
         st.markdown(
             """
 #### Defect Detection
-**Purpose:** improve inspection effectiveness through AI-assisted quality analysis
+**Purpose:** improve inspection visibility
 
-**Key Outputs:**
-- defect visualization
-- defect result review
-- quality support insights
+**Outputs**
+- defect image review
+- defect data analysis
+- quality insight
 
-**Business Outcome:**
-better defect control and lower scrap
+**Outcome**
+- better defect control
 """
         )
 
@@ -289,19 +305,19 @@ better defect control and lower scrap
         st.markdown(
             """
 #### Demand Forecasting
-**Purpose:** improve planning through demand trend and forecast comparison
+**Purpose:** improve planning quality
 
-**Key Outputs:**
+**Outputs**
 - actual vs forecast trend
 - forecast accuracy
-- planning insights
+- bias detection
 
-**Business Outcome:**
-improved forecast confidence and planning quality
+**Outcome**
+- better planning confidence
 """
         )
 
-    st.markdown("### Suggested Enterprise Architecture")
+    section_header("Architecture Overview")
     st.code(
         "ERP / MES / Sensors / Images / Demand History\n"
         "                ↓\n"
@@ -314,26 +330,24 @@ improved forecast confidence and planning quality
         "Enterprise AI Control Tower"
     )
 
-    st.markdown("### Recommended Next Actions")
+    section_header("Recommended Next Actions")
     action_items = []
     if high_risk_machines > 0:
-        action_items.append(f"- Review and prioritize maintenance plan for **{high_risk_machines} high-risk machine(s)**")
+        action_items.append(f"- Prioritize inspection and intervention for **{high_risk_machines} high-risk machine(s)**")
     if defect_records > 0:
-        action_items.append(f"- Review **{defect_records} defect-related record(s)** for recurring quality issues")
+        action_items.append(f"- Review **{defect_records} quality record(s)** for repeatable defect patterns")
     if forecast_accuracy_display != "N/A":
-        action_items.append(f"- Validate forecast assumptions against the latest planning accuracy of **{forecast_accuracy_display}**")
+        action_items.append(f"- Validate planning assumptions against current forecast accuracy of **{forecast_accuracy_display}**")
     if not action_items:
-        action_items.append("- Load module data sources to activate platform-level decision support")
+        action_items.append("- Load module data sources to activate platform-level executive support")
 
     st.markdown("\n".join(action_items))
 
-    st.markdown("### CIO Perspective")
+    section_header("CIO Perspective")
     st.warning(
         """
-This is not just a model showcase.
-
-It demonstrates how AI can be framed as an **enterprise capability** by linking predictive analytics to
-operational priorities, executive KPIs, and business decision support.
+This is not a model demo. It is an enterprise decision layer that links AI outputs to operating priorities,
+business KPIs, and management action.
 """
     )
 
@@ -341,7 +355,10 @@ operational priorities, executive KPIs, and business decision support.
 # Predictive Maintenance
 # --------------------------------------------------
 elif module == "Predictive Maintenance":
-    st.subheader("Predictive Maintenance")
+    executive_banner(
+        "Predictive Maintenance",
+        "Executive view of machine risk, downtime exposure, and maintenance action"
+    )
 
     model_path = PM_DIR / "model.pkl"
     if not model_path.exists():
@@ -375,7 +392,7 @@ elif module == "Predictive Maintenance":
         st.stop()
 
     st.sidebar.markdown("---")
-    st.sidebar.subheader("PM Filters")
+    st.sidebar.subheader("Predictive Maintenance Filters")
 
     filtered_df = machine_df.copy()
 
@@ -404,7 +421,7 @@ elif module == "Predictive Maintenance":
     default_vibration = float(selected_row[vib_col]) if pd.notna(selected_row[vib_col]) else 0.5
     default_humidity = 40.0
 
-    st.sidebar.markdown("### Simulation")
+    st.sidebar.markdown("### Simulation Inputs")
     temperature = st.sidebar.slider("Temperature (°C)", 50.0, 120.0, float(default_temp))
     pressure = st.sidebar.slider("Pressure (psi)", 20.0, 200.0, float(default_pressure))
     vibration = st.sidebar.slider("Vibration (mm/s)", 0.0, 20.0, float(default_vibration))
@@ -420,25 +437,22 @@ elif module == "Predictive Maintenance":
     risk_level, recommended_action = classify_risk(probability)
     estimated_loss = probability * 10000
 
-    st.markdown(
+    info_box(
         f"""
-<div style="padding:10px; border-radius:8px; background-color:#eef6ff; margin-bottom:10px;">
 <strong>Executive Summary:</strong> Machine <strong>{selected_machine}</strong> has a predicted failure probability of
-<strong>{probability:.2%}</strong>, categorized as <strong>{risk_level}</strong> risk.
-Estimated downtime exposure is <strong>SGD {estimated_loss:,.0f}</strong>.
-</div>
-""",
-        unsafe_allow_html=True
+<strong>{probability:.2%}</strong>, classified as <strong>{risk_level}</strong> risk, with estimated downtime exposure of
+<strong>SGD {estimated_loss:,.0f}</strong>.
+"""
     )
 
-    st.markdown("### Factory Maintenance KPIs")
+    section_header("Maintenance KPI Summary")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Machine Status", "High Risk" if prediction == 1 else "Normal")
     k2.metric("Failure Probability", f"{probability:.2%}")
     k3.metric("Risk Level", risk_level)
-    k4.metric("Estimated Downtime Cost", f"SGD {estimated_loss:,.0f}")
+    k4.metric("Downtime Exposure", f"SGD {estimated_loss:,.0f}")
 
-    st.markdown("### Selected Machine Details")
+    section_header("Selected Machine Details")
     c1, c2 = st.columns(2)
 
     with c1:
@@ -455,7 +469,7 @@ Estimated downtime exposure is <strong>SGD {estimated_loss:,.0f}</strong>.
         st.write(f"**Estimated Downtime Cost:** SGD {estimated_loss:,.0f}")
         st.write(f"**Prediction Class:** {int(prediction)}")
 
-    st.markdown("### Input Parameters")
+    section_header("Input Parameter Profile")
     chart_data = pd.DataFrame(
         {
             "Parameter": ["Temperature", "Pressure", "Vibration", "Humidity"],
@@ -464,7 +478,6 @@ Estimated downtime exposure is <strong>SGD {estimated_loss:,.0f}</strong>.
     )
     st.bar_chart(chart_data.set_index("Parameter"))
 
-    # Portfolio-wide risk simulation for filtered set
     sim_df = filtered_df.copy()
     sim_input = pd.DataFrame({
         "temperature": sim_df[temp_col].astype(float),
@@ -480,25 +493,26 @@ Estimated downtime exposure is <strong>SGD {estimated_loss:,.0f}</strong>.
         lambda x: "High" if x > 0.7 else ("Medium" if x > 0.4 else "Low")
     )
 
-    st.markdown("### Risk Distribution Overview")
+    section_header("Portfolio Risk Distribution")
     r1, r2, r3 = st.columns(3)
     r1.metric("High Risk Machines", int((sim_df["risk_level"] == "High").sum()))
     r2.metric("Medium Risk Machines", int((sim_df["risk_level"] == "Medium").sum()))
     r3.metric("Low Risk Machines", int((sim_df["risk_level"] == "Low").sum()))
 
-    st.markdown("### Top 5 Highest-Risk Machines")
-    top_risk_cols = [machine_id_col, "failure_probability", "risk_level", "estimated_risk_cost"]
+    section_header("Top 5 Highest-Risk Machines")
+    top_risk_cols = [machine_id_col]
     if line_col:
-        top_risk_cols.insert(1, line_col)
+        top_risk_cols.append(line_col)
     if shift_col:
-        top_risk_cols.insert(2 if line_col else 1, shift_col)
+        top_risk_cols.append(shift_col)
+    top_risk_cols += ["failure_probability", "risk_level", "estimated_risk_cost"]
 
     top_risk_df = sim_df[top_risk_cols].sort_values("failure_probability", ascending=False).head(5).copy()
     top_risk_df["failure_probability"] = top_risk_df["failure_probability"].map(lambda x: f"{x:.2%}")
     top_risk_df["estimated_risk_cost"] = top_risk_df["estimated_risk_cost"].map(lambda x: f"SGD {x:,.0f}")
     st.dataframe(top_risk_df, use_container_width=True)
 
-    st.markdown("### Filtered Machine Risk Snapshot")
+    section_header("Filtered Machine Risk Snapshot")
     snapshot_cols = [machine_id_col]
     if line_col:
         snapshot_cols.append(line_col)
@@ -526,16 +540,9 @@ Estimated downtime exposure is <strong>SGD {estimated_loss:,.0f}</strong>.
 # Defect Detection
 # --------------------------------------------------
 elif module == "Defect Detection":
-    st.subheader("Defect Detection")
-
-    st.markdown(
-        """
-This module is intended to showcase vision-based inspection:
-
-- defect classification  
-- image-based quality control  
-- early identification of faulty products  
-"""
+    executive_banner(
+        "Defect Detection",
+        "Executive quality view across inspection visuals, defect records, and quality insight"
     )
 
     possible_pngs = list(DD_DIR.glob("*.png")) + list((DD_DIR / "assets").glob("*.png"))
@@ -551,6 +558,14 @@ This module is intended to showcase vision-based inspection:
 
     defect_records = len(defect_df) if defect_df is not None else 0
 
+    info_box(
+        f"""
+<strong>Executive Summary:</strong> The quality module is currently supporting inspection review with
+<strong>{defect_records}</strong> available defect-related record(s).
+"""
+    )
+
+    section_header("Quality KPI Summary")
     c1, c2, c3 = st.columns(3)
     c1.metric("Inspection Module", "Active")
     c2.metric("Defect Records", defect_records)
@@ -560,39 +575,39 @@ This module is intended to showcase vision-based inspection:
 
     with left:
         if possible_pngs:
-            st.subheader("Sample Output / Visuals")
+            st.markdown("### Sample Inspection Visual")
             st.image(str(possible_pngs[0]), use_container_width=True)
         else:
             st.info("Place one sample defect image or output screenshot inside 02-Defect-Detection to display here.")
 
     with right:
         if defect_df is not None:
-            st.subheader("Sample Defect Data")
+            st.markdown("### Defect Data Snapshot")
             st.dataframe(defect_df.head(), use_container_width=True)
         else:
             st.info("Place a CSV result file inside 02-Defect-Detection to show sample outputs.")
 
     if defect_df is not None and "defect_type" in defect_df.columns:
-        st.markdown("### Defect Type Distribution")
+        section_header("Defect Type Distribution")
         defect_type_counts = defect_df["defect_type"].astype(str).value_counts()
         st.bar_chart(defect_type_counts)
 
-    st.markdown("### Quality Insight")
+    section_header("Executive Quality Insight")
     if defect_df is not None and "defect_type" in defect_df.columns:
         top_defect = defect_df["defect_type"].astype(str).value_counts().idxmax()
         st.info(
-            f"The current defect dataset suggests that **{top_defect}** is the most frequently observed issue and should be prioritized for root cause review."
+            f"The current defect dataset indicates that **{top_defect}** is the most frequently observed issue and should be prioritized for root cause analysis."
         )
     elif defect_records > 0:
         st.info(
-            "Defect records are available for review. The next step is to standardize defect labels to enable trend-based quality analysis."
+            "Defect records are available for review. Standardized defect categories would improve trend visibility and executive reporting."
         )
     else:
         st.info(
-            "No structured defect dataset was detected. Add a defect CSV and one visual sample to complete this module."
+            "No structured defect dataset was detected. Add one image and one CSV to complete the quality module."
         )
 
-    st.markdown("### Business Value")
+    section_header("Business Value")
     st.markdown(
         """
 - Reduce manual inspection effort  
@@ -606,16 +621,9 @@ This module is intended to showcase vision-based inspection:
 # Demand Forecasting
 # --------------------------------------------------
 elif module == "Demand Forecasting":
-    st.subheader("Demand Forecasting")
-
-    st.markdown(
-        """
-This module is intended to showcase demand planning and forecasting:
-
-- historical demand trend analysis  
-- forecast-based planning  
-- inventory and production optimization  
-"""
+    executive_banner(
+        "Demand Forecasting",
+        "Executive planning view across forecast accuracy, bias, and product demand trends"
     )
 
     forecast_path = DF_DIR / "demand_forecast_sample.csv"
@@ -631,12 +639,13 @@ This module is intended to showcase demand planning and forecasting:
         st.error("Demand forecast CSV must contain: date, product_id, actual_demand, forecast_demand")
         st.stop()
 
+    section_header("Planning Module Summary")
     c1, c2, c3 = st.columns(3)
     c1.metric("Planning Module", "Active")
     c2.metric("Use Case", "Forecasting")
     c3.metric("Primary Value", "Improve Planning Accuracy")
 
-    st.subheader("Sample Forecast Data")
+    st.markdown("### Demand Data Snapshot")
     st.dataframe(forecast_df.head(), use_container_width=True)
 
     product_list = sorted(forecast_df["product_id"].dropna().astype(str).unique().tolist())
@@ -646,7 +655,14 @@ This module is intended to showcase demand planning and forecasting:
     product_df["date"] = pd.to_datetime(product_df["date"])
     product_df = product_df.sort_values("date")
 
-    st.subheader("Demand vs Forecast Trend")
+    info_box(
+        f"""
+<strong>Executive Summary:</strong> Product <strong>{selected_product}</strong> is being assessed for planning quality through
+actual demand vs forecast comparison, forecast accuracy, and bias analysis.
+"""
+    )
+
+    section_header("Demand vs Forecast Trend")
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(product_df["date"], product_df["actual_demand"], label="Actual Demand")
     ax.plot(product_df["date"], product_df["forecast_demand"], linestyle="--", label="Forecast")
@@ -662,18 +678,18 @@ This module is intended to showcase demand planning and forecasting:
     demand_volatility = product_df["actual_demand"].std()
 
     if accuracy > 0.9:
-        accuracy_level = "high"
+        accuracy_level = "High"
     elif accuracy > 0.8:
-        accuracy_level = "moderate"
+        accuracy_level = "Moderate"
     else:
-        accuracy_level = "low"
+        accuracy_level = "Low"
 
     if bias > 1:
-        bias_type = "over-forecasting"
+        bias_type = "Over-Forecasting"
     elif bias < -1:
-        bias_type = "under-forecasting"
+        bias_type = "Under-Forecasting"
     else:
-        bias_type = "balanced forecasting"
+        bias_type = "Balanced"
 
     if demand_volatility > 20:
         volatility_level = "High"
@@ -682,30 +698,30 @@ This module is intended to showcase demand planning and forecasting:
     else:
         volatility_level = "Low"
 
-    st.markdown("### Product KPI Summary")
+    section_header("Product KPI Summary")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Forecast Accuracy", f"{accuracy:.2%}")
     k2.metric("Average Actual Demand", f"{avg_actual:.1f}")
-    k3.metric("Average Forecast Demand", f"{avg_forecast:.1f}")
+    k3.metric("Average Forecast", f"{avg_forecast:.1f}")
     k4.metric("Forecast Bias", bias_type)
 
     if accuracy < 0.8:
-        st.error("Alert: Forecast accuracy is below acceptable threshold. Immediate model review recommended.")
+        st.error("Forecast accuracy is below acceptable threshold. Model review is recommended.")
     elif bias > 10:
-        st.warning("Warning: Significant over-forecasting detected.")
+        st.warning("Significant over-forecasting detected.")
 
-    st.markdown("### AI-Generated Business Insights")
+    section_header("AI-Generated Planning Insight")
     trend = "increasing" if product_df["actual_demand"].iloc[-1] > product_df["actual_demand"].iloc[0] else "stable / declining"
     st.info(
         f"""
 - **Demand Trend:** Demand is **{trend}** over the observed period.  
-- **Forecast Performance:** The model shows **{accuracy_level} accuracy** ({accuracy:.2%}).  
-- **Forecast Bias:** The system is **{bias_type}**, indicating potential planning risk.  
-- **Demand Volatility:** Demand volatility is assessed as **{volatility_level}**, which affects planning confidence.  
+- **Forecast Performance:** The model shows **{accuracy_level.lower()} accuracy** ({accuracy:.2%}).  
+- **Forecast Bias:** The system is **{bias_type.lower()}**, indicating potential planning risk.  
+- **Demand Volatility:** Volatility is assessed as **{volatility_level.lower()}**, which influences confidence in planning.  
 """
     )
 
-    st.markdown("### Product Summary Table")
+    section_header("Product Summary Table")
     summary_rows = []
     for product in product_list:
         tmp = forecast_df[forecast_df["product_id"].astype(str) == product].copy()
