@@ -1,93 +1,80 @@
-# Vincent Eng – AI & Digital Transformation Portfolio
-
-## Profile
-Group Head of IT with leadership experience in Smart Manufacturing, Digital Transformation, Cloud Architecture, Data Governance, and Cybersecurity across regional manufacturing environments.
-
-I focus on bridging business strategy with technology execution, especially in:
-- Smart factory transformation
-- AI and machine learning adoption
-- MES, IoT, and data-driven manufacturing
-- Azure cloud and enterprise architecture
-- Cybersecurity and governance
-
----
-
-## Key Areas
-- AI / Machine Learning
-- Smart Manufacturing (MES, IoT)
-- Cloud Architecture (Azure)
-- Data Governance & Cybersecurity
-- Data Engineering & Analytics
-- Digital Transformation Leadership
-
----
-
-## Portfolio Sections
-- [AI Foundations](./01-AI-Foundations)
-- [Projects](./02-Projects)
-- [Smart Manufacturing](./03-Smart-Manufacturing)
-- [Data Engineering](./04-Data-Engineering)
-- [AI Architecture](./05-AI-Architecture)
-- [Presentations](./06-Presentations)
-- [Notes](./07-Notes)
-
----
-
-## Featured Project
-### Predictive Maintenance for Smart Factory
-A practical AI use case focused on predicting equipment failure before breakdown occurs, using machine learning, sensor data, and maintenance history.
-
-**Scope includes:**
-- Data collection from equipment and sensors
-- Data cleaning and feature engineering
-- Predictive model development
-- Visualization of failure patterns
-- Maintenance decision support
-- Manufacturing business value analysis
-
-**Planned deliverables:**
-- Project README
-- Python code
-- Sample dataset
-- Architecture diagram
-- PowerPoint presentation
-- PDF version for GitHub viewing
-
----
-
-## Smart Manufacturing Focus
-My portfolio emphasizes how AI can be applied in real manufacturing environments, including:
-- Predictive maintenance
-- Quality analytics
-- Production forecasting
-- MES integration
-- IoT-enabled monitoring
-- Digital twin concepts
-- Factory performance optimization
-
----
-
-## Cloud and Enterprise Technology Focus
-This portfolio also reflects practical enterprise technology capabilities in:
-- Microsoft Azure
-- Azure Data Factory
-- Azure Databricks
-- Azure Machine Learning
-- Data lakes and analytics platforms
-- Cybersecurity architecture
-- Governance frameworks
-
----
-
-## Purpose of This Portfolio
-This repository serves as:
-- A structured AI knowledge base
-- A professional portfolio of AI and digital transformation work
-- A showcase of smart manufacturing use cases
-- A learning and project repository for continuous development
-
----
-
-## Contact
-**Vincent Eng**  
-Group Head of IT | AI & Digital Transformation Leader
+🏭 Enterprise AI Platform for Smart Manufacturing
+🚀 CIO-Led Digital & AI Transformation Platform
+This project showcases a CIO-led Enterprise AI Platform designed to transform traditional manufacturing into a data-driven, intelligent, and predictive operation.
+It integrates Predictive Maintenance, Quality AI (Defect Detection), and Demand Forecasting into a unified Executive Control Tower, enabling leadership to make faster, smarter, and business-aligned decisions.
+🎯 Business Objective
+Manufacturing organizations often face:
+Unplanned machine downtime
+Inconsistent product quality
+Poor demand visibility
+Siloed data across systems (MES, ERP, IoT)
+This platform addresses these challenges by:
+Predicting failures before they happen
+Detecting defects early using AI
+Forecasting demand for better planning
+Providing a unified executive dashboard
+🧠 AI Capabilities
+🔧 Predictive Maintenance
+Machine failure prediction using historical and sensor data
+Risk scoring for critical assets
+Maintenance prioritization
+🔍 Defect Detection (Quality AI)
+AI-based quality inspection
+Pattern recognition for defects
+Reduced dependency on manual inspection
+📈 Demand Forecasting
+Time-series forecasting models
+Production planning optimization
+Inventory and supply chain alignment
+📊 Executive Dashboard (Control Tower)
+The platform provides a board-level dashboard with:
+KPI Overview (Downtime, Quality Rate, Forecast Accuracy)
+Risk Alerts and AI Predictions
+Business Impact Metrics
+Cross-functional visibility across Operations, Quality, and Supply Chain
+🏗️ Architecture Overview
+Data Sources (MES | ERP | IoT Sensors)
+↓
+Data Processing (Pandas | Feature Engineering)
+↓
+AI Models (Scikit-learn / ML Models)
+↓
+Deployment Layer (Streamlit Dashboard)
+↓
+Executive Insights (Control Tower View)
+⚙️ Technology Stack
+Python
+Pandas / NumPy
+Scikit-learn
+Streamlit
+CSV-based simulation datasets
+💡 Business Impact
+This platform demonstrates how AI can:
+Reduce unplanned downtime
+Improve product quality
+Increase forecast accuracy
+Enable proactive decision-making
+Align IT strategy with business outcomes
+🧑‍💼 CIO Perspective
+This is not just a technical project.
+It represents how a CIO can:
+Lead enterprise AI transformation
+Integrate AI into core business processes
+Build scalable digital platforms
+Deliver measurable business value
+▶️ How to Run
+pip install -r requirements.txt
+streamlit run app.py
+📌 Future Enhancements
+Real-time IoT data integration
+Cloud deployment (Azure / AWS)
+MLOps pipeline
+Integration with enterprise MES/ERP systems
+Advanced AI models (Deep Learning / LLM integration)
+🤝 About
+Built by a CIO with 30+ years of IT leadership experience, focusing on:
+Smart Manufacturing
+Enterprise AI Strategy
+Digital Transformation
+Data Governance
+⭐ If you find this useful, feel free to star the repository! 
