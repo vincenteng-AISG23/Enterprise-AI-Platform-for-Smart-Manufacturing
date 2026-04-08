@@ -101,3 +101,29 @@ It represents how a CIO can:
 ---
 
 ## How to Run
+
+ip install -r requirements.txt
+streamlit run app.py
+
+---
+
+## Future Enhancements
+
+- Real-time IoT data integration  
+- Cloud deployment (Azure / AWS)  
+- MLOps pipeline integration  
+- Advanced AI models (Deep Learning / LLM integration)  
+
+---
+
+## About
+
+Built by a CIO with 30+ years of IT leadership experience in:
+
+- Smart Manufacturing  
+- Enterprise IT & AI Strategy  
+- Digital Transformation  
+- Data Governance
+- Enterprise Cyber-Security Governance & Policy  
+
+If you find this useful, feel free to star the repository.
