@@ -1,750 +1,764 @@
-import streamlit as st
+import numpy as np
 import pandas as pd
-import joblib
+import streamlit as st
 from pathlib import Path
-import matplotlib.pyplot as plt
 
-# --------------------------------------------------
+# Optional plotting
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except Exception:
+    PLOTLY_AVAILABLE = False
+
+
+# -----------------------------
 # Page config
-# --------------------------------------------------
+# -----------------------------
 st.set_page_config(
     page_title="Enterprise AI Platform for Smart Manufacturing",
+    page_icon="🏭",
     layout="wide"
 )
 
-BASE_DIR = Path(__file__).parent
-PM_DIR = BASE_DIR / "01-Predictive-Maintenance"
-DD_DIR = BASE_DIR / "02-Defect-Detection"
-DF_DIR = BASE_DIR / "03-Demand-Forecasting"
+# -----------------------------
+# Styling
+# -----------------------------
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.8rem;
+}
+.exec-banner {
+    background: #f3f4f6;
+    padding: 0.8rem 1rem;
+    border-radius: 0.6rem;
+    border-left: 6px solid #111827;
+    margin-bottom: 1rem;
+}
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.8rem;
+    padding: 1rem 1rem 0.8rem 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.kpi-label {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-bottom: 0.2rem;
+}
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.kpi-sub {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.3rem;
+}
+.small-note {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Branding
-# --------------------------------------------------
-PLATFORM_TITLE = "Enterprise AI Platform for Smart Manufacturing"
-PLATFORM_SUBTITLE = "Executive control tower for reliability, quality, and planning"
 
-# --------------------------------------------------
-# Shared helper functions
-# --------------------------------------------------
-def safe_read_csv(path: Path):
-    try:
-        if path.exists():
-            return pd.read_csv(path)
-    except Exception:
-        return None
+# -----------------------------
+# Helpers
+# -----------------------------
+ROOT = Path.cwd()
+
+
+def find_first_file(patterns):
+    for pattern in patterns:
+        matches = list(ROOT.rglob(pattern))
+        if matches:
+            return matches[0]
     return None
 
 
-def classify_risk(probability: float):
-    if probability > 0.7:
-        return "High", "Immediate maintenance required"
-    if probability > 0.4:
-        return "Medium", "Schedule inspection"
-    return "Low", "Continue normal operation"
+def safe_read_csv(path: Path) -> pd.DataFrame:
+    try:
+        return pd.read_csv(path)
+    except Exception:
+        return pd.DataFrame()
 
 
-def module_health_status():
-    pm_model_ok = (PM_DIR / "model.pkl").exists()
-    pm_data_ok = (PM_DIR / "sample_machine_data.csv").exists()
+def first_existing_column(df: pd.DataFrame, candidates):
+    cols_lower = {c.lower(): c for c in df.columns}
+    for c in candidates:
+        if c.lower() in cols_lower:
+            return cols_lower[c.lower()]
+    return None
 
-    dd_image_ok = len(list(DD_DIR.glob("*.png")) + list((DD_DIR / "assets").glob("*.png"))) > 0
-    dd_csv_ok = len(list(DD_DIR.glob("*.csv"))) > 0
 
-    df_csv_ok = (DF_DIR / "demand_forecast_sample.csv").exists()
+def standardize_pm_df(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
 
-    return {
-        "pm": pm_model_ok and pm_data_ok,
-        "dd": dd_image_ok or dd_csv_ok,
-        "df": df_csv_ok
+    out = df.copy()
+
+    mapping = {
+        "machine_id": ["machine_id", "machine", "id", "asset_id"],
+        "production_line": ["production_line", "line", "prod_line"],
+        "shift": ["shift"],
+        "operating_hours_per_day": ["operating_hours_per_day", "operating_hours", "hours_per_day", "run_hours"],
+        "temperature_c": ["temperature_c", "temperature", "temp_c", "temp"],
+        "vibration_mm_s": ["vibration_mm_s", "vibration", "vibration_mms"],
+        "pressure_psi": ["pressure_psi", "pressure", "pressure_bar"],
+        "current_a": ["current_a", "current", "ampere", "amps"],
+        "failure": ["failure", "failure_flag", "breakdown", "target"],
+        "plant": ["plant", "site"],
     }
 
+    renamed = {}
+    for std_name, candidates in mapping.items():
+        col = first_existing_column(out, candidates)
+        if col:
+            renamed[col] = std_name
 
-def get_platform_kpis():
-    high_risk_machines = 0
-    total_risk_exposure = 0.0
-    defect_records = 0
-    forecast_accuracy_display = "N/A"
+    out = out.rename(columns=renamed)
 
-    # Predictive Maintenance KPI
-    try:
-        pm_model_path = PM_DIR / "model.pkl"
-        pm_machine_path = PM_DIR / "sample_machine_data.csv"
+    if "machine_id" not in out.columns:
+        out["machine_id"] = [f"M-{i:03d}" for i in range(1, len(out) + 1)]
 
-        if pm_model_path.exists() and pm_machine_path.exists():
-            pm_model = joblib.load(pm_model_path)
-            pm_df = pd.read_csv(pm_machine_path)
-            pm_df.columns = [c.strip().lower() for c in pm_df.columns]
+    if "production_line" not in out.columns:
+        out["production_line"] = np.random.choice(["Line A", "Line B", "Line C"], len(out))
 
-            temp_col = "temperature_c" if "temperature_c" in pm_df.columns else None
-            pressure_col = "pressure_psi" if "pressure_psi" in pm_df.columns else None
-            vib_col = "vibration_mm_s" if "vibration_mm_s" in pm_df.columns else None
+    if "shift" not in out.columns:
+        out["shift"] = np.random.choice(["Day", "Night", "Swing"], len(out))
 
-            if temp_col and pressure_col and vib_col:
-                pm_input = pd.DataFrame({
-                    "temperature": pm_df[temp_col],
-                    "pressure": pm_df[pressure_col],
-                    "vibration": pm_df[vib_col],
-                    "humidity": 40.0
-                })
+    if "operating_hours_per_day" not in out.columns:
+        out["operating_hours_per_day"] = np.random.uniform(8, 22, len(out)).round(1)
 
-                probs = pm_model.predict_proba(pm_input)[:, 1]
-                high_risk_machines = int((probs > 0.7).sum())
-                total_risk_exposure = float((probs * 10000).sum())
-    except Exception:
-        pass
+    if "temperature_c" not in out.columns:
+        out["temperature_c"] = np.random.uniform(55, 95, len(out)).round(1)
 
-    # Defect Detection KPI
-    try:
-        dd_csvs = list(DD_DIR.glob("*.csv"))
-        if dd_csvs:
-            dd_df = pd.read_csv(dd_csvs[0])
-            defect_records = len(dd_df)
-    except Exception:
-        pass
+    if "vibration_mm_s" not in out.columns:
+        out["vibration_mm_s"] = np.random.uniform(1.0, 12.0, len(out)).round(1)
 
-    # Demand Forecasting KPI
-    try:
-        forecast_path = DF_DIR / "demand_forecast_sample.csv"
-        if forecast_path.exists():
-            forecast_df = pd.read_csv(forecast_path)
-            forecast_df.columns = [c.strip().lower() for c in forecast_df.columns]
+    if "pressure_psi" not in out.columns:
+        out["pressure_psi"] = np.random.uniform(70, 130, len(out)).round(1)
 
-            if {"actual_demand", "forecast_demand"}.issubset(set(forecast_df.columns)):
-                forecast_df["error"] = (
-                    forecast_df["actual_demand"] - forecast_df["forecast_demand"]
-                ).abs()
-                acc = 1 - (forecast_df["error"].mean() / forecast_df["actual_demand"].mean())
-                forecast_accuracy_display = f"{acc:.2%}"
-    except Exception:
-        pass
+    if "current_a" not in out.columns:
+        out["current_a"] = np.random.uniform(15, 60, len(out)).round(1)
 
-    return high_risk_machines, total_risk_exposure, defect_records, forecast_accuracy_display
+    if "failure" not in out.columns:
+        risk_score = (
+            (out["temperature_c"] - out["temperature_c"].min()) / max(1e-9, (out["temperature_c"].max() - out["temperature_c"].min())) * 0.30
+            + (out["vibration_mm_s"] - out["vibration_mm_s"].min()) / max(1e-9, (out["vibration_mm_s"].max() - out["vibration_mm_s"].min())) * 0.35
+            + (out["pressure_psi"] - out["pressure_psi"].min()) / max(1e-9, (out["pressure_psi"].max() - out["pressure_psi"].min())) * 0.15
+            + (out["current_a"] - out["current_a"].min()) / max(1e-9, (out["current_a"].max() - out["current_a"].min())) * 0.10
+            + (out["operating_hours_per_day"] - out["operating_hours_per_day"].min()) / max(1e-9, (out["operating_hours_per_day"].max() - out["operating_hours_per_day"].min())) * 0.10
+        )
+        out["failure"] = (risk_score > 0.58).astype(int)
+
+    if "plant" not in out.columns:
+        out["plant"] = np.random.choice(["Plant SG", "Plant MY", "Plant TH"], len(out))
+
+    return out
 
 
-def executive_banner(title, subtitle):
+def standardize_demand_df(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    out = df.copy()
+
+    mapping = {
+        "date": ["date", "month", "period"],
+        "product_id": ["product_id", "product", "sku"],
+        "actual_demand": ["actual_demand", "actual", "demand", "sales"],
+        "forecast_demand": ["forecast_demand", "forecast", "predicted_demand", "prediction"],
+    }
+
+    renamed = {}
+    for std_name, candidates in mapping.items():
+        col = first_existing_column(out, candidates)
+        if col:
+            renamed[col] = std_name
+
+    out = out.rename(columns=renamed)
+
+    if "date" not in out.columns:
+        out["date"] = pd.date_range("2025-01-01", periods=len(out), freq="M")
+
+    if "product_id" not in out.columns:
+        out["product_id"] = np.random.choice(["P-100", "P-200", "P-300"], len(out))
+
+    if "actual_demand" not in out.columns:
+        out["actual_demand"] = np.random.randint(80, 180, len(out))
+
+    if "forecast_demand" not in out.columns:
+        noise = np.random.randint(-15, 16, len(out))
+        out["forecast_demand"] = out["actual_demand"] + noise
+
+    out["date"] = pd.to_datetime(out["date"], errors="coerce")
+    out["forecast_error"] = out["forecast_demand"] - out["actual_demand"]
+    out["abs_error"] = out["forecast_error"].abs()
+    out["accuracy_pct"] = 100 - ((out["abs_error"] / out["actual_demand"].replace(0, np.nan)) * 100)
+    out["accuracy_pct"] = out["accuracy_pct"].fillna(0).clip(lower=0, upper=100)
+
+    return out
+
+
+def build_defect_df(n=120):
+    np.random.seed(42)
+    dates = pd.date_range("2025-01-01", periods=n, freq="D")
+    lines = np.random.choice(["Line A", "Line B", "Line C"], n)
+    units_checked = np.random.randint(800, 1400, n)
+    defect_rate = np.random.uniform(0.8, 3.8, n)
+    defects_found = (units_checked * defect_rate / 100).astype(int)
+
+    return pd.DataFrame({
+        "date": dates,
+        "production_line": lines,
+        "units_checked": units_checked,
+        "defects_found": defects_found,
+        "defect_rate_pct": defect_rate.round(2),
+    })
+
+
+def risk_band(prob):
+    if prob >= 0.70:
+        return "High"
+    if prob >= 0.45:
+        return "Medium"
+    return "Low"
+
+
+def traffic_status(value, good_threshold, watch_threshold, reverse=False):
+    if reverse:
+        if value <= good_threshold:
+            return "Good"
+        if value <= watch_threshold:
+            return "Watch"
+        return "Risk"
+    else:
+        if value >= good_threshold:
+            return "Good"
+        if value >= watch_threshold:
+            return "Watch"
+        return "Risk"
+
+
+def status_badge_text(status):
+    if status == "Good":
+        return "🟢 Good"
+    if status == "Watch":
+        return "🟠 Watch"
+    return "🔴 Risk"
+
+
+def calc_pm_probability(row):
+    temp_score = min(max((row["temperature_c"] - 55) / 40, 0), 1)
+    vib_score = min(max((row["vibration_mm_s"] - 1) / 11, 0), 1)
+    press_score = min(max((row["pressure_psi"] - 70) / 60, 0), 1)
+    current_score = min(max((row["current_a"] - 15) / 45, 0), 1)
+    hours_score = min(max((row["operating_hours_per_day"] - 8) / 14, 0), 1)
+
+    prob = (
+        0.30 * temp_score
+        + 0.35 * vib_score
+        + 0.12 * press_score
+        + 0.10 * current_score
+        + 0.13 * hours_score
+    )
+    return round(float(min(max(prob, 0), 1)), 4)
+
+
+def metric_card(label, value, subtext=""):
     st.markdown(
         f"""
-<div style="padding:16px 18px; border-radius:10px; background-color:#f6f8fb; border:1px solid #e6eaf0; margin-bottom:14px;">
-    <div style="font-size:28px; font-weight:700; margin-bottom:4px;">{title}</div>
-    <div style="font-size:15px; color:#4b5563;">{subtitle}</div>
-</div>
-""",
+        <div class="kpi-card">
+            <div class="kpi-label">{label}</div>
+            <div class="kpi-value">{value}</div>
+            <div class="kpi-sub">{subtext}</div>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
 
-def section_header(title):
-    st.markdown(f"### {title}")
+# -----------------------------
+# Load data
+# -----------------------------
+pm_path = find_first_file([
+    "sample_machine_data.csv",
+    "sample_predictive_maintenance_data.csv",
+    "*machine*.csv",
+    "*predictive*maintenance*.csv",
+])
 
+demand_path = find_first_file([
+    "demand_forecast_sample.csv",
+    "sample_demand_data.csv",
+    "*demand*.csv",
+    "*forecast*.csv",
+])
 
-def info_box(text):
-    st.markdown(
-        f"""
-<div style="padding:12px 14px; border-radius:8px; background-color:#eef6ff; border-left:5px solid #3b82f6; margin-bottom:12px;">
-{text}
-</div>
-""",
-        unsafe_allow_html=True
-    )
+defect_image = find_first_file([
+    "defect_sample.png",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+])
 
+pm_df = standardize_pm_df(safe_read_csv(pm_path) if pm_path else pd.DataFrame())
+demand_df = standardize_demand_df(safe_read_csv(demand_path) if demand_path else pd.DataFrame())
+defect_df = build_defect_df()
 
-# --------------------------------------------------
-# Header
-# --------------------------------------------------
-st.title(PLATFORM_TITLE)
-st.caption(PLATFORM_SUBTITLE)
+if pm_df.empty:
+    st.error("No predictive maintenance data found.")
+    st.stop()
 
-# --------------------------------------------------
+# -----------------------------
+# Core calculations
+# -----------------------------
+pm_df["failure_probability"] = pm_df.apply(calc_pm_probability, axis=1)
+pm_df["risk_level"] = pm_df["failure_probability"].apply(risk_band)
+pm_df["estimated_downtime_cost"] = (pm_df["failure_probability"] * 10000).round(0)
+
+overall_pm_risk = pm_df["failure_probability"].mean() * 100
+high_risk_assets = int((pm_df["risk_level"] == "High").sum())
+avg_downtime_cost = pm_df["estimated_downtime_cost"].mean()
+
+overall_defect_rate = defect_df["defect_rate_pct"].mean()
+quality_yield = 100 - overall_defect_rate
+
+forecast_accuracy = demand_df["accuracy_pct"].mean() if not demand_df.empty else 0
+inventory_impact_pct = max(0, round((forecast_accuracy - 70) * 0.45, 1))
+
+platform_health_score = round(
+    (
+        (100 - overall_pm_risk) * 0.40
+        + quality_yield * 0.30
+        + forecast_accuracy * 0.30
+    ),
+    1
+)
+
+overall_status = traffic_status(platform_health_score, good_threshold=85, watch_threshold=70, reverse=False)
+pm_status = traffic_status(100 - overall_pm_risk, good_threshold=75, watch_threshold=55, reverse=False)
+defect_status = traffic_status(overall_defect_rate, good_threshold=1.5, watch_threshold=2.8, reverse=True)
+forecast_status = traffic_status(forecast_accuracy, good_threshold=88, watch_threshold=78, reverse=False)
+
+# -----------------------------
 # Sidebar navigation
-# --------------------------------------------------
-st.sidebar.title("Navigation")
+# -----------------------------
+st.sidebar.title("Platform Navigation")
 module = st.sidebar.radio(
-    "Select View",
+    "Select Module",
     [
         "Executive Overview",
         "Predictive Maintenance",
         "Defect Detection",
-        "Demand Forecasting"
+        "Demand Forecasting",
     ]
 )
 
-# --------------------------------------------------
-# Executive Overview
-# --------------------------------------------------
-if module == "Executive Overview":
-    executive_banner(
-        "Executive Overview",
-        "Integrated AI visibility across maintenance, quality, and demand planning"
+# -----------------------------
+# Sidebar filters - module specific
+# -----------------------------
+st.sidebar.markdown("---")
+
+selected_line = "All"
+selected_shift = "All"
+selected_machine = None
+selected_defect_line = "All"
+selected_product = "All"
+
+filtered_pm = pm_df.copy()
+selected_row = pm_df.iloc[0]
+
+# Predictive Maintenance sidebar only
+if module == "Predictive Maintenance":
+    st.sidebar.markdown("### Predictive Maintenance Filters")
+
+    line_options = ["All"] + sorted(pm_df["production_line"].astype(str).unique().tolist())
+    shift_options = ["All"] + sorted(pm_df["shift"].astype(str).unique().tolist())
+
+    selected_line = st.sidebar.selectbox("Production Line", line_options)
+    selected_shift = st.sidebar.selectbox("Shift", shift_options)
+
+    if selected_line != "All":
+        filtered_pm = filtered_pm[filtered_pm["production_line"] == selected_line]
+    if selected_shift != "All":
+        filtered_pm = filtered_pm[filtered_pm["shift"] == selected_shift]
+
+    if filtered_pm.empty:
+        filtered_pm = pm_df.copy()
+
+    selected_machine = st.sidebar.selectbox(
+        "Select Machine",
+        filtered_pm["machine_id"].astype(str).unique().tolist()
     )
-
-    high_risk_machines, total_risk_exposure, defect_records, forecast_accuracy_display = get_platform_kpis()
-    health = module_health_status()
-
-    info_box(
-        f"""
-<strong>Board Summary:</strong> The platform consolidates three AI use cases into one decision layer.
-Current indicators show <strong>{high_risk_machines}</strong> high-risk machine(s), 
-<strong>SGD {total_risk_exposure:,.0f}</strong> estimated maintenance exposure,
-<strong>{defect_records}</strong> defect record(s), and
-forecast accuracy of <strong>{forecast_accuracy_display}</strong>.
-"""
-    )
-
-    section_header("Platform KPI Summary")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("High-Risk Machines", high_risk_machines)
-    k2.metric("Risk Exposure", f"SGD {total_risk_exposure:,.0f}")
-    k3.metric("Defect Records", defect_records)
-    k4.metric("Forecast Accuracy", forecast_accuracy_display)
-
-    section_header("Module Health")
-    h1, h2, h3 = st.columns(3)
-    h1.metric("Predictive Maintenance", "Active" if health["pm"] else "Needs Data")
-    h2.metric("Defect Detection", "Active" if health["dd"] else "Needs Data")
-    h3.metric("Demand Forecasting", "Active" if health["df"] else "Needs Data")
-
-    section_header("Strategic Scope")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.markdown(
-            """
-**Operational Priorities**
-- Improve asset reliability
-- Reduce quality defects
-- Strengthen planning accuracy
-- Increase enterprise visibility
-
-**Transformation Shift**
-- Reactive maintenance → predictive maintenance
-- Manual inspection → AI-assisted quality control
-- Historical planning → forecast-led planning
-"""
-        )
-
-    with c2:
-        st.markdown(
-            """
-**Leadership Objectives**
-- Translate model output into actions
-- Provide KPI-driven decision support
-- Improve cross-functional coordination
-- Demonstrate measurable business value from AI
-"""
-        )
-
-    section_header("Business Value")
-    b1, b2, b3 = st.columns(3)
-
-    with b1:
-        st.markdown(
-            """
-**Reliability**
-- Reduce unplanned downtime
-- Lower maintenance cost
-- Improve equipment availability
-"""
-        )
-
-    with b2:
-        st.markdown(
-            """
-**Quality**
-- Detect issues earlier
-- Reduce scrap and rework
-- Improve product consistency
-"""
-        )
-
-    with b3:
-        st.markdown(
-            """
-**Planning**
-- Improve forecast confidence
-- Support production scheduling
-- Reduce planning inefficiencies
-"""
-        )
-
-    section_header("AI Use Case Portfolio")
-    u1, u2, u3 = st.columns(3)
-
-    with u1:
-        st.markdown(
-            """
-#### Predictive Maintenance
-**Purpose:** anticipate machine failure risk
-
-**Outputs**
-- failure probability
-- risk classification
-- downtime impact
-
-**Outcome**
-- better maintenance prioritization
-"""
-        )
-
-    with u2:
-        st.markdown(
-            """
-#### Defect Detection
-**Purpose:** improve inspection visibility
-
-**Outputs**
-- defect image review
-- defect data analysis
-- quality insight
-
-**Outcome**
-- better defect control
-"""
-        )
-
-    with u3:
-        st.markdown(
-            """
-#### Demand Forecasting
-**Purpose:** improve planning quality
-
-**Outputs**
-- actual vs forecast trend
-- forecast accuracy
-- bias detection
-
-**Outcome**
-- better planning confidence
-"""
-        )
-
-    section_header("Architecture Overview")
-    st.code(
-        "ERP / MES / Sensors / Images / Demand History\n"
-        "                ↓\n"
-        "Data Preparation / Feature Engineering\n"
-        "                ↓\n"
-        "Machine Learning Models by Use Case\n"
-        "                ↓\n"
-        "Business Rules / KPI Logic / Executive Insights\n"
-        "                ↓\n"
-        "Enterprise AI Control Tower"
-    )
-
-    section_header("Recommended Next Actions")
-    action_items = []
-    if high_risk_machines > 0:
-        action_items.append(f"- Prioritize inspection and intervention for **{high_risk_machines} high-risk machine(s)**")
-    if defect_records > 0:
-        action_items.append(f"- Review **{defect_records} quality record(s)** for repeatable defect patterns")
-    if forecast_accuracy_display != "N/A":
-        action_items.append(f"- Validate planning assumptions against current forecast accuracy of **{forecast_accuracy_display}**")
-    if not action_items:
-        action_items.append("- Load module data sources to activate platform-level executive support")
-
-    st.markdown("\n".join(action_items))
-
-    section_header("CIO Perspective")
-    st.warning(
-        """
-This is not a model demo. It is an enterprise decision layer that links AI outputs to operating priorities,
-business KPIs, and management action.
-"""
-    )
-
-# --------------------------------------------------
-# Predictive Maintenance
-# --------------------------------------------------
-elif module == "Predictive Maintenance":
-    executive_banner(
-        "Predictive Maintenance",
-        "Executive view of machine risk, downtime exposure, and maintenance action"
-    )
-
-    model_path = PM_DIR / "model.pkl"
-    if not model_path.exists():
-        st.error("Model file not found. Please run train_model.py inside 01-Predictive-Maintenance first.")
-        st.stop()
-
-    model = joblib.load(model_path)
-
-    machine_file = PM_DIR / "sample_machine_data.csv"
-    if not machine_file.exists():
-        st.error("sample_machine_data.csv not found inside 01-Predictive-Maintenance.")
-        st.stop()
-
-    machine_df = pd.read_csv(machine_file)
-    machine_df.columns = [c.strip().lower() for c in machine_df.columns]
-
-    machine_id_col = "machine_id"
-    line_col = "production_line" if "production_line" in machine_df.columns else None
-    shift_col = "shift" if "shift" in machine_df.columns else None
-    hours_col = "operating_hours_per_day" if "operating_hours_per_day" in machine_df.columns else None
-    temp_col = "temperature_c" if "temperature_c" in machine_df.columns else None
-    vib_col = "vibration_mm_s" if "vibration_mm_s" in machine_df.columns else None
-    pressure_col = "pressure_psi" if "pressure_psi" in machine_df.columns else None
-
-    if machine_id_col not in machine_df.columns:
-        st.error("sample_machine_data.csv must contain a 'machine_id' column.")
-        st.stop()
-
-    if not all([temp_col, vib_col, pressure_col]):
-        st.error("sample_machine_data.csv must contain temperature_c, vibration_mm_s, and pressure_psi columns.")
-        st.stop()
+    selected_row = filtered_pm[filtered_pm["machine_id"] == selected_machine].iloc[0]
 
     st.sidebar.markdown("---")
-    st.sidebar.subheader("Predictive Maintenance Filters")
+    st.sidebar.markdown("### Simulation")
 
-    filtered_df = machine_df.copy()
+    sim_temp = st.sidebar.slider("Temperature (°C)", 40.0, 110.0, float(selected_row["temperature_c"]), 0.1)
+    sim_vibration = st.sidebar.slider("Vibration (mm/s)", 0.0, 15.0, float(selected_row["vibration_mm_s"]), 0.1)
+    sim_pressure = st.sidebar.slider("Pressure (psi)", 50.0, 150.0, float(selected_row["pressure_psi"]), 0.1)
+    sim_current = st.sidebar.slider("Current (A)", 5.0, 80.0, float(selected_row["current_a"]), 0.1)
+    sim_hours = st.sidebar.slider("Operating Hours / Day", 1.0, 24.0, float(selected_row["operating_hours_per_day"]), 0.1)
+else:
+    sim_temp = float(selected_row["temperature_c"])
+    sim_vibration = float(selected_row["vibration_mm_s"])
+    sim_pressure = float(selected_row["pressure_psi"])
+    sim_current = float(selected_row["current_a"])
+    sim_hours = float(selected_row["operating_hours_per_day"])
 
-    if line_col:
-        line_list = ["All"] + sorted(filtered_df[line_col].dropna().astype(str).unique().tolist())
-        selected_line = st.sidebar.selectbox("Production Line", line_list)
-        if selected_line != "All":
-            filtered_df = filtered_df[filtered_df[line_col].astype(str) == selected_line]
+# Defect Detection sidebar only
+if module == "Defect Detection":
+    st.sidebar.markdown("### Defect Detection Filters")
+    defect_line_options = ["All"] + sorted(defect_df["production_line"].astype(str).unique().tolist())
+    selected_defect_line = st.sidebar.selectbox("Inspection Line", defect_line_options)
 
-    if shift_col:
-        shift_list = ["All"] + sorted(filtered_df[shift_col].dropna().astype(str).unique().tolist())
-        selected_shift = st.sidebar.selectbox("Shift", shift_list)
-        if selected_shift != "All":
-            filtered_df = filtered_df[filtered_df[shift_col].astype(str) == selected_shift]
+# Demand Forecasting sidebar only
+if module == "Demand Forecasting":
+    st.sidebar.markdown("### Demand Forecasting Filters")
+    if not demand_df.empty:
+        product_options = ["All"] + sorted(demand_df["product_id"].astype(str).unique().tolist())
+        selected_product = st.sidebar.selectbox("Product", product_options)
 
-    machine_list = filtered_df[machine_id_col].dropna().astype(str).tolist()
-    if not machine_list:
-        st.warning("No machines found for the selected filters.")
-        st.stop()
+# Executive Overview sidebar
+if module == "Executive Overview":
+    st.sidebar.info("Executive Overview shows platform-level KPIs across all modules.")
 
-    selected_machine = st.sidebar.selectbox("Select Machine", machine_list)
-    selected_row = filtered_df[filtered_df[machine_id_col].astype(str) == selected_machine].iloc[0]
+# -----------------------------
+# Filtered datasets
+# -----------------------------
+filtered_defect_df = defect_df.copy()
+if selected_defect_line != "All":
+    filtered_defect_df = filtered_defect_df[filtered_defect_df["production_line"] == selected_defect_line]
 
-    default_temp = float(selected_row[temp_col]) if pd.notna(selected_row[temp_col]) else 80.0
-    default_pressure = float(selected_row[pressure_col]) if pd.notna(selected_row[pressure_col]) else 30.0
-    default_vibration = float(selected_row[vib_col]) if pd.notna(selected_row[vib_col]) else 0.5
-    default_humidity = 40.0
+filtered_demand_df = demand_df.copy()
+if selected_product != "All" and not demand_df.empty:
+    filtered_demand_df = filtered_demand_df[filtered_demand_df["product_id"] == selected_product]
 
-    st.sidebar.markdown("### Simulation Inputs")
-    temperature = st.sidebar.slider("Temperature (°C)", 50.0, 120.0, float(default_temp))
-    pressure = st.sidebar.slider("Pressure (psi)", 20.0, 200.0, float(default_pressure))
-    vibration = st.sidebar.slider("Vibration (mm/s)", 0.0, 20.0, float(default_vibration))
-    humidity = st.sidebar.slider("Humidity (%)", 20.0, 80.0, float(default_humidity))
+# -----------------------------
+# PM simulation metrics
+# -----------------------------
+sim_probability = calc_pm_probability(pd.Series({
+    "temperature_c": sim_temp,
+    "vibration_mm_s": sim_vibration,
+    "pressure_psi": sim_pressure,
+    "current_a": sim_current,
+    "operating_hours_per_day": sim_hours
+}))
+sim_risk = risk_band(sim_probability)
+sim_cost = round(sim_probability * 10000, 0)
 
-    input_data = pd.DataFrame(
-        [[temperature, pressure, vibration, humidity]],
-        columns=["temperature", "pressure", "vibration", "humidity"]
-    )
+# -----------------------------
+# Header
+# -----------------------------
+st.title("Enterprise AI Platform for Smart Manufacturing")
+st.caption("CIO-led digital and AI transformation platform for reliability, quality, and planning")
 
-    prediction = model.predict(input_data)[0]
-    probability = model.predict_proba(input_data)[0][1]
-    risk_level, recommended_action = classify_risk(probability)
-    estimated_loss = probability * 10000
+st.markdown(
+    f"""
+    <div class="exec-banner">
+        <strong>Executive Summary:</strong>
+        Platform Health Score is <strong>{platform_health_score}</strong>/100.
+        Predictive Maintenance is <strong>{status_badge_text(pm_status)}</strong>,
+        Quality AI is <strong>{status_badge_text(defect_status)}</strong>,
+        and Demand Forecasting is <strong>{status_badge_text(forecast_status)}</strong>.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-    info_box(
-        f"""
-<strong>Executive Summary:</strong> Machine <strong>{selected_machine}</strong> has a predicted failure probability of
-<strong>{probability:.2%}</strong>, classified as <strong>{risk_level}</strong> risk, with estimated downtime exposure of
-<strong>SGD {estimated_loss:,.0f}</strong>.
-"""
-    )
-
-    section_header("Maintenance KPI Summary")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Machine Status", "High Risk" if prediction == 1 else "Normal")
-    k2.metric("Failure Probability", f"{probability:.2%}")
-    k3.metric("Risk Level", risk_level)
-    k4.metric("Downtime Exposure", f"SGD {estimated_loss:,.0f}")
-
-    section_header("Selected Machine Details")
-    c1, c2 = st.columns(2)
-
+# -----------------------------
+# Executive Overview
+# -----------------------------
+if module == "Executive Overview":
+    st.markdown('<div class="section-title">Platform KPI Row</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.write(f"**Machine ID:** {selected_machine}")
-        if line_col:
-            st.write(f"**Production Line:** {selected_row[line_col]}")
-        if shift_col:
-            st.write(f"**Shift:** {selected_row[shift_col]}")
-        if hours_col:
-            st.write(f"**Operating Hours / Day:** {selected_row[hours_col]}")
-
+        metric_card("Platform Health Score", f"{platform_health_score}", status_badge_text(overall_status))
     with c2:
-        st.write(f"**Recommended Action:** {recommended_action}")
-        st.write(f"**Estimated Downtime Cost:** SGD {estimated_loss:,.0f}")
-        st.write(f"**Prediction Class:** {int(prediction)}")
+        metric_card("Avg Failure Risk", f"{overall_pm_risk:.1f}%", f"{high_risk_assets} high-risk assets")
+    with c3:
+        metric_card("Quality Yield", f"{quality_yield:.1f}%", f"Avg defect rate {overall_defect_rate:.2f}%")
+    with c4:
+        metric_card("Forecast Accuracy", f"{forecast_accuracy:.1f}%", f"Estimated inventory gain {inventory_impact_pct:.1f}%")
 
-    section_header("Input Parameter Profile")
-    chart_data = pd.DataFrame(
-        {
-            "Parameter": ["Temperature", "Pressure", "Vibration", "Humidity"],
-            "Value": [temperature, pressure, vibration, humidity]
-        }
-    )
-    st.bar_chart(chart_data.set_index("Parameter"))
+    st.markdown('<div class="section-title">Module Health Row</div>', unsafe_allow_html=True)
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        metric_card("Predictive Maintenance", status_badge_text(pm_status), f"Risk score {(100 - overall_pm_risk):.1f}/100")
+    with m2:
+        metric_card("Defect Detection", status_badge_text(defect_status), f"Defect rate {overall_defect_rate:.2f}%")
+    with m3:
+        metric_card("Demand Forecasting", status_badge_text(forecast_status), f"Accuracy {forecast_accuracy:.1f}%")
 
-    sim_df = filtered_df.copy()
-    sim_input = pd.DataFrame({
-        "temperature": sim_df[temp_col].astype(float),
-        "pressure": sim_df[pressure_col].astype(float),
-        "vibration": sim_df[vib_col].astype(float),
-        "humidity": 40.0
+    st.markdown('<div class="section-title">Business Impact Summary</div>', unsafe_allow_html=True)
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        metric_card("Downtime Cost Exposure", f"SGD {avg_downtime_cost:,.0f}", "Predictive maintenance portfolio")
+    with b2:
+        metric_card("High-Risk Assets", f"{high_risk_assets}", "Assets requiring intervention")
+    with b3:
+        metric_card("Quality Loss Proxy", f"{overall_defect_rate:.2f}%", "Average defect leakage")
+    with b4:
+        metric_card("Planning Uplift", f"{inventory_impact_pct:.1f}%", "Inventory / forecast improvement")
+
+    st.markdown('<div class="section-title">Executive Platform Narrative</div>', unsafe_allow_html=True)
+    st.markdown("""
+- **Predictive Maintenance** improves asset reliability by highlighting high-risk machines before breakdown.
+- **Defect Detection** improves quality performance by reducing defect leakage and manual inspection dependency.
+- **Demand Forecasting** improves planning accuracy and supports inventory and production balancing.
+- The platform demonstrates how a CIO can connect **operations, quality, and planning** into a single executive control tower.
+""")
+
+    st.markdown('<div class="section-title">Module KPI Table</div>', unsafe_allow_html=True)
+    summary_table = pd.DataFrame({
+        "Module": ["Predictive Maintenance", "Defect Detection", "Demand Forecasting"],
+        "Primary KPI": [
+            f"Avg Failure Risk = {overall_pm_risk:.1f}%",
+            f"Defect Rate = {overall_defect_rate:.2f}%",
+            f"Forecast Accuracy = {forecast_accuracy:.1f}%"
+        ],
+        "Status": [
+            status_badge_text(pm_status),
+            status_badge_text(defect_status),
+            status_badge_text(forecast_status)
+        ],
+        "Business Meaning": [
+            "Asset reliability and downtime prevention",
+            "Product quality and defect leakage reduction",
+            "Planning, inventory, and service level improvement"
+        ]
     })
+    st.dataframe(summary_table, use_container_width=True)
 
-    sim_probs = model.predict_proba(sim_input)[:, 1]
-    sim_df["failure_probability"] = sim_probs
-    sim_df["estimated_risk_cost"] = sim_df["failure_probability"] * 10000
-    sim_df["risk_level"] = sim_df["failure_probability"].apply(
-        lambda x: "High" if x > 0.7 else ("Medium" if x > 0.4 else "Low")
-    )
+    if PLOTLY_AVAILABLE:
+        st.markdown('<div class="section-title">Control Tower Scorecard</div>', unsafe_allow_html=True)
+        score_df = pd.DataFrame({
+            "Area": ["Reliability", "Quality", "Planning"],
+            "Score": [round(100 - overall_pm_risk, 1), round(quality_yield, 1), round(forecast_accuracy, 1)]
+        })
+        fig = px.bar(score_df, x="Area", y="Score", text="Score")
+        fig.update_layout(height=380, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig, use_container_width=True)
 
-    section_header("Portfolio Risk Distribution")
-    r1, r2, r3 = st.columns(3)
-    r1.metric("High Risk Machines", int((sim_df["risk_level"] == "High").sum()))
-    r2.metric("Medium Risk Machines", int((sim_df["risk_level"] == "Medium").sum()))
-    r3.metric("Low Risk Machines", int((sim_df["risk_level"] == "Low").sum()))
+# -----------------------------
+# Predictive Maintenance
+# -----------------------------
+elif module == "Predictive Maintenance":
+    st.markdown('<div class="section-title">Predictive Maintenance</div>', unsafe_allow_html=True)
 
-    section_header("Top 5 Highest-Risk Machines")
-    top_risk_cols = [machine_id_col]
-    if line_col:
-        top_risk_cols.append(line_col)
-    if shift_col:
-        top_risk_cols.append(shift_col)
-    top_risk_cols += ["failure_probability", "risk_level", "estimated_risk_cost"]
-
-    top_risk_df = sim_df[top_risk_cols].sort_values("failure_probability", ascending=False).head(5).copy()
-    top_risk_df["failure_probability"] = top_risk_df["failure_probability"].map(lambda x: f"{x:.2%}")
-    top_risk_df["estimated_risk_cost"] = top_risk_df["estimated_risk_cost"].map(lambda x: f"SGD {x:,.0f}")
-    st.dataframe(top_risk_df, use_container_width=True)
-
-    section_header("Filtered Machine Risk Snapshot")
-    snapshot_cols = [machine_id_col]
-    if line_col:
-        snapshot_cols.append(line_col)
-    if shift_col:
-        snapshot_cols.append(shift_col)
-    if hours_col:
-        snapshot_cols.append(hours_col)
-    snapshot_cols += ["failure_probability", "risk_level", "estimated_risk_cost"]
-
-    snapshot_df = sim_df[snapshot_cols].copy()
-    snapshot_df["failure_probability"] = snapshot_df["failure_probability"].map(lambda x: f"{x:.2%}")
-    snapshot_df["estimated_risk_cost"] = snapshot_df["estimated_risk_cost"].map(lambda x: f"SGD {x:,.0f}")
-    st.dataframe(snapshot_df, use_container_width=True)
-
-    csv_export_df = sim_df.copy()
-    csv_bytes = csv_export_df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="Download Filtered Risk Data (CSV)",
-        data=csv_bytes,
-        file_name="filtered_machine_risk_snapshot.csv",
-        mime="text/csv"
-    )
-
-# --------------------------------------------------
-# Defect Detection
-# --------------------------------------------------
-elif module == "Defect Detection":
-    executive_banner(
-        "Defect Detection",
-        "Executive quality view across inspection visuals, defect records, and quality insight"
-    )
-
-    possible_pngs = list(DD_DIR.glob("*.png")) + list((DD_DIR / "assets").glob("*.png"))
-    possible_csvs = list(DD_DIR.glob("*.csv"))
-
-    defect_df = None
-    if possible_csvs:
-        try:
-            defect_df = pd.read_csv(possible_csvs[0])
-            defect_df.columns = [c.strip().lower() for c in defect_df.columns]
-        except Exception:
-            defect_df = None
-
-    defect_records = len(defect_df) if defect_df is not None else 0
-
-    info_box(
-        f"""
-<strong>Executive Summary:</strong> The quality module is currently supporting inspection review with
-<strong>{defect_records}</strong> available defect-related record(s).
-"""
-    )
-
-    section_header("Quality KPI Summary")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Inspection Module", "Active")
-    c2.metric("Defect Records", defect_records)
-    c3.metric("Primary Value", "Reduce Scrap")
-
-    left, right = st.columns([1.2, 1])
-
-    with left:
-        if possible_pngs:
-            st.markdown("### Sample Inspection Visual")
-            st.image(str(possible_pngs[0]), use_container_width=True)
-        else:
-            st.info("Place one sample defect image or output screenshot inside 02-Defect-Detection to display here.")
-
-    with right:
-        if defect_df is not None:
-            st.markdown("### Defect Data Snapshot")
-            st.dataframe(defect_df.head(), use_container_width=True)
-        else:
-            st.info("Place a CSV result file inside 02-Defect-Detection to show sample outputs.")
-
-    if defect_df is not None and "defect_type" in defect_df.columns:
-        section_header("Defect Type Distribution")
-        defect_type_counts = defect_df["defect_type"].astype(str).value_counts()
-        st.bar_chart(defect_type_counts)
-
-    section_header("Executive Quality Insight")
-    if defect_df is not None and "defect_type" in defect_df.columns:
-        top_defect = defect_df["defect_type"].astype(str).value_counts().idxmax()
-        st.info(
-            f"The current defect dataset indicates that **{top_defect}** is the most frequently observed issue and should be prioritized for root cause analysis."
-        )
-    elif defect_records > 0:
-        st.info(
-            "Defect records are available for review. Standardized defect categories would improve trend visibility and executive reporting."
-        )
-    else:
-        st.info(
-            "No structured defect dataset was detected. Add one image and one CSV to complete the quality module."
-        )
-
-    section_header("Business Value")
     st.markdown(
-        """
-- Reduce manual inspection effort  
-- Detect defects earlier  
-- Improve yield and product quality  
-- Lower scrap and rework cost  
-"""
-    )
-
-# --------------------------------------------------
-# Demand Forecasting
-# --------------------------------------------------
-elif module == "Demand Forecasting":
-    executive_banner(
-        "Demand Forecasting",
-        "Executive planning view across forecast accuracy, bias, and product demand trends"
-    )
-
-    forecast_path = DF_DIR / "demand_forecast_sample.csv"
-    if not forecast_path.exists():
-        st.info("Place a demand forecasting CSV inside 03-Demand-Forecasting to display data and charts.")
-        st.stop()
-
-    forecast_df = pd.read_csv(forecast_path)
-    forecast_df.columns = [c.strip().lower() for c in forecast_df.columns]
-
-    required_cols = {"date", "product_id", "actual_demand", "forecast_demand"}
-    if not required_cols.issubset(set(forecast_df.columns)):
-        st.error("Demand forecast CSV must contain: date, product_id, actual_demand, forecast_demand")
-        st.stop()
-
-    section_header("Planning Module Summary")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Planning Module", "Active")
-    c2.metric("Use Case", "Forecasting")
-    c3.metric("Primary Value", "Improve Planning Accuracy")
-
-    st.markdown("### Demand Data Snapshot")
-    st.dataframe(forecast_df.head(), use_container_width=True)
-
-    product_list = sorted(forecast_df["product_id"].dropna().astype(str).unique().tolist())
-    selected_product = st.selectbox("Select Product", product_list)
-
-    product_df = forecast_df[forecast_df["product_id"].astype(str) == selected_product].copy()
-    product_df["date"] = pd.to_datetime(product_df["date"])
-    product_df = product_df.sort_values("date")
-
-    info_box(
         f"""
-<strong>Executive Summary:</strong> Product <strong>{selected_product}</strong> is being assessed for planning quality through
-actual demand vs forecast comparison, forecast accuracy, and bias analysis.
-"""
+        <div class="exec-banner">
+            <strong>Executive Summary:</strong>
+            Machine <strong>{selected_machine}</strong> has a predicted failure probability of
+            <strong>{sim_probability * 100:.2f}%</strong>, categorized as
+            <strong>{sim_risk}</strong> risk. Estimated downtime exposure is
+            <strong>SGD {sim_cost:,.0f}</strong>.
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    section_header("Demand vs Forecast Trend")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(product_df["date"], product_df["actual_demand"], label="Actual Demand")
-    ax.plot(product_df["date"], product_df["forecast_demand"], linestyle="--", label="Forecast")
-    ax.set_title(f"Demand Forecast - {selected_product}")
-    ax.legend()
-    st.pyplot(fig)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Machine Status", status_badge_text("Risk" if sim_risk == "High" else "Watch" if sim_risk == "Medium" else "Good"), f"{selected_machine}")
+    with c2:
+        metric_card("Failure Probability", f"{sim_probability * 100:.2f}%", f"Risk band: {sim_risk}")
+    with c3:
+        metric_card("Production Line", f"{selected_row['production_line']}", f"Shift: {selected_row['shift']}")
+    with c4:
+        metric_card("Estimated Downtime Cost", f"SGD {sim_cost:,.0f}", "Business exposure")
 
-    product_df["error"] = (product_df["actual_demand"] - product_df["forecast_demand"]).abs()
-    accuracy = 1 - (product_df["error"].mean() / product_df["actual_demand"].mean())
-    bias = (product_df["forecast_demand"] - product_df["actual_demand"]).mean()
-    avg_actual = product_df["actual_demand"].mean()
-    avg_forecast = product_df["forecast_demand"].mean()
-    demand_volatility = product_df["actual_demand"].std()
+    d1, d2 = st.columns([1.15, 1])
+    with d1:
+        st.markdown("#### Selected Machine Details")
+        detail_df = pd.DataFrame({
+            "Attribute": [
+                "Machine ID", "Plant", "Production Line", "Shift",
+                "Operating Hours / Day", "Temperature (°C)", "Vibration (mm/s)",
+                "Pressure (psi)", "Current (A)"
+            ],
+            "Value": [
+                selected_machine,
+                selected_row["plant"],
+                selected_row["production_line"],
+                selected_row["shift"],
+                sim_hours,
+                sim_temp,
+                sim_vibration,
+                sim_pressure,
+                sim_current
+            ]
+        })
+        st.dataframe(detail_df, use_container_width=True, hide_index=True)
 
-    if accuracy > 0.9:
-        accuracy_level = "High"
-    elif accuracy > 0.8:
-        accuracy_level = "Moderate"
-    else:
-        accuracy_level = "Low"
-
-    if bias > 1:
-        bias_type = "Over-Forecasting"
-    elif bias < -1:
-        bias_type = "Under-Forecasting"
-    else:
-        bias_type = "Balanced"
-
-    if demand_volatility > 20:
-        volatility_level = "High"
-    elif demand_volatility > 10:
-        volatility_level = "Medium"
-    else:
-        volatility_level = "Low"
-
-    section_header("Product KPI Summary")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Forecast Accuracy", f"{accuracy:.2%}")
-    k2.metric("Average Actual Demand", f"{avg_actual:.1f}")
-    k3.metric("Average Forecast", f"{avg_forecast:.1f}")
-    k4.metric("Forecast Bias", bias_type)
-
-    if accuracy < 0.8:
-        st.error("Forecast accuracy is below acceptable threshold. Model review is recommended.")
-    elif bias > 10:
-        st.warning("Significant over-forecasting detected.")
-
-    section_header("AI-Generated Planning Insight")
-    trend = "increasing" if product_df["actual_demand"].iloc[-1] > product_df["actual_demand"].iloc[0] else "stable / declining"
-    st.info(
-        f"""
-- **Demand Trend:** Demand is **{trend}** over the observed period.  
-- **Forecast Performance:** The model shows **{accuracy_level.lower()} accuracy** ({accuracy:.2%}).  
-- **Forecast Bias:** The system is **{bias_type.lower()}**, indicating potential planning risk.  
-- **Demand Volatility:** Volatility is assessed as **{volatility_level.lower()}**, which influences confidence in planning.  
-"""
-    )
-
-    section_header("Product Summary Table")
-    summary_rows = []
-    for product in product_list:
-        tmp = forecast_df[forecast_df["product_id"].astype(str) == product].copy()
-        tmp["error"] = (tmp["actual_demand"] - tmp["forecast_demand"]).abs()
-        tmp_acc = 1 - (tmp["error"].mean() / tmp["actual_demand"].mean())
-        tmp_bias = (tmp["forecast_demand"] - tmp["actual_demand"]).mean()
-
-        if tmp_bias > 1:
-            tmp_bias_type = "Over"
-        elif tmp_bias < -1:
-            tmp_bias_type = "Under"
+    with d2:
+        st.markdown("#### Recommended Action")
+        if sim_risk == "High":
+            st.error("Immediate maintenance inspection recommended. High probability of failure.")
+        elif sim_risk == "Medium":
+            st.warning("Monitor closely and schedule maintenance in next cycle.")
         else:
-            tmp_bias_type = "Balanced"
+            st.success("Operating within acceptable range. Continue normal monitoring.")
 
-        summary_rows.append(
-            {
-                "product_id": product,
-                "forecast_accuracy": f"{tmp_acc:.2%}",
-                "avg_actual_demand": round(tmp["actual_demand"].mean(), 1),
-                "avg_forecast_demand": round(tmp["forecast_demand"].mean(), 1),
-                "bias_type": tmp_bias_type
-            }
+        st.markdown(
+            f"""
+- **Prediction Class:** {"1 (Potential Failure)" if sim_probability >= 0.5 else "0 (Normal)"}  
+- **Risk Level:** {sim_risk}  
+- **Estimated Downtime Cost:** SGD {sim_cost:,.0f}  
+- **Business Interpretation:** {"Potential production disruption" if sim_probability >= 0.5 else "Acceptable operating profile"}  
+"""
         )
 
-    summary_df = pd.DataFrame(summary_rows)
-    st.dataframe(summary_df, use_container_width=True)
+    if PLOTLY_AVAILABLE:
+        st.markdown("#### Machine Risk Driver Profile")
+        risk_driver_df = pd.DataFrame({
+            "Parameter": ["Temperature", "Vibration", "Pressure", "Current", "Operating Hours"],
+            "Value": [sim_temp, sim_vibration, sim_pressure, sim_current, sim_hours]
+        })
+        fig = px.bar(risk_driver_df, x="Parameter", y="Value", text="Value")
+        fig.update_layout(height=380, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("#### Portfolio Risk by Machine")
+        pm_rank = filtered_pm.sort_values("failure_probability", ascending=False)[["machine_id", "failure_probability", "production_line"]].head(12)
+        fig2 = px.bar(pm_rank, x="machine_id", y="failure_probability", color="production_line", text="failure_probability")
+        fig2.update_layout(height=420, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig2, use_container_width=True)
+
+# -----------------------------
+# Defect Detection
+# -----------------------------
+elif module == "Defect Detection":
+    current_defect_rate = filtered_defect_df["defect_rate_pct"].mean()
+    current_quality_yield = 100 - current_defect_rate
+    current_defect_status = traffic_status(current_defect_rate, good_threshold=1.5, watch_threshold=2.8, reverse=True)
+
+    st.markdown('<div class="section-title">Defect Detection</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="exec-banner">
+            <strong>Executive Summary:</strong>
+            Current average defect rate is <strong>{current_defect_rate:.2f}%</strong>,
+            translating to an estimated quality yield of <strong>{current_quality_yield:.2f}%</strong>.
+            Overall module status is <strong>{status_badge_text(current_defect_status)}</strong>.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Defect Rate", f"{current_defect_rate:.2f}%", "Average across inspected batches")
+    with c2:
+        metric_card("Quality Yield", f"{current_quality_yield:.2f}%", "Proxy first-pass quality")
+    with c3:
+        metric_card("Units Checked", f"{int(filtered_defect_df['units_checked'].sum()):,}", "Inspection coverage")
+    with c4:
+        metric_card("Defects Found", f"{int(filtered_defect_df['defects_found'].sum()):,}", "Detected quality issues")
+
+    if defect_image and defect_image.exists():
+        st.markdown("#### Sample Inspection Image")
+        st.image(str(defect_image), use_container_width=True)
+    else:
+        st.info("No defect sample image found. Add a PNG/JPG into the defect detection folder if you want it shown here.")
+
+    if PLOTLY_AVAILABLE:
+        st.markdown("#### Defect Trend")
+        defect_daily = filtered_defect_df.groupby("date", as_index=False)["defect_rate_pct"].mean()
+        fig = px.line(defect_daily, x="date", y="defect_rate_pct")
+        fig.update_layout(height=360, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("#### Defect Rate by Production Line")
+        line_df = filtered_defect_df.groupby("production_line", as_index=False)["defect_rate_pct"].mean()
+        fig2 = px.bar(line_df, x="production_line", y="defect_rate_pct", text="defect_rate_pct")
+        fig2.update_layout(height=360, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.markdown("#### Quality Management Interpretation")
+    st.markdown("""
+- **Business Use Case:** Reduce manual inspection effort and defect leakage.
+- **Operational Value:** Earlier detection improves yield and reduces rework.
+- **Leadership Signal:** Defect trend should be monitored alongside line performance and scrap cost.
+""")
+
+# -----------------------------
+# Demand Forecasting
+# -----------------------------
+elif module == "Demand Forecasting":
+    current_forecast_accuracy = filtered_demand_df["accuracy_pct"].mean() if not filtered_demand_df.empty else 0
+    current_inventory_impact = max(0, round((current_forecast_accuracy - 70) * 0.45, 1))
+    current_forecast_status = traffic_status(current_forecast_accuracy, good_threshold=88, watch_threshold=78, reverse=False)
+
+    st.markdown('<div class="section-title">Demand Forecasting</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="exec-banner">
+            <strong>Executive Summary:</strong>
+            Current forecast accuracy is <strong>{current_forecast_accuracy:.2f}%</strong>,
+            with estimated planning and inventory benefit of <strong>{current_inventory_impact:.1f}%</strong>.
+            Overall module status is <strong>{status_badge_text(current_forecast_status)}</strong>.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Forecast Accuracy", f"{current_forecast_accuracy:.2f}%", "Portfolio accuracy")
+    with c2:
+        metric_card("Average Actual Demand", f"{filtered_demand_df['actual_demand'].mean():.0f}", "Across demand periods")
+    with c3:
+        metric_card("Average Forecast", f"{filtered_demand_df['forecast_demand'].mean():.0f}", "Model output average")
+    with c4:
+        metric_card("Inventory / Planning Gain", f"{current_inventory_impact:.1f}%", "Estimated impact proxy")
+
+    if PLOTLY_AVAILABLE and not filtered_demand_df.empty:
+        st.markdown("#### Actual vs Forecast Demand")
+        trend_df = filtered_demand_df.groupby("date", as_index=False)[["actual_demand", "forecast_demand"]].sum()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=trend_df["date"], y=trend_df["actual_demand"], mode="lines+markers", name="Actual Demand"))
+        fig.add_trace(go.Scatter(x=trend_df["date"], y=trend_df["forecast_demand"], mode="lines+markers", name="Forecast Demand"))
+        fig.update_layout(height=380, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("#### Product-Level Forecast Accuracy")
+        product_summary = filtered_demand_df.groupby("product_id", as_index=False)["accuracy_pct"].mean()
+        fig2 = px.bar(product_summary, x="product_id", y="accuracy_pct", text="accuracy_pct")
+        fig2.update_layout(height=360, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.markdown("#### Forecasting Management Interpretation")
+    st.markdown("""
+- **Business Use Case:** Improve production planning and inventory alignment.
+- **Operational Value:** Better forecast accuracy reduces stock imbalance and schedule volatility.
+- **Leadership Signal:** Forecast performance should be reviewed alongside service level and inventory days.
+""")
+
+# -----------------------------
+# Footer
+# -----------------------------
+st.markdown("---")
+st.markdown(
+    "<div class='small-note'>Enterprise AI Platform for Smart Manufacturing | CIO-led portfolio demonstration across reliability, quality, and planning</div>",
+    unsafe_allow_html=True
+)
