@@ -140,13 +140,13 @@ This repository is part of a broader portfolio focused on CIO-level digital tran
 ## Screenshots
 
 ### Executive Overview
-![Executive Overview](06-Screenshots/executive_overview.png)
+![Executive Overview](06-Screenshots/executive-overview.jpeg)
 
 ### Predictive Maintenance
-![Predictive Maintenance](06-Screenshots/predictive_maintenance.png)
+![Predictive Maintenance](06-Screenshots/predictive-maintenance.jpeg)
 
 ### Defect Detection
-![Defect Detection](06-Screenshots/defect_detection.png)
+![Defect Detection](06-Screenshots/defect-detection.jpeg)
 
 ### Demand Forecasting
-![Demand Forecasting](06-Screenshots/demand_forecasting.png)
+![Demand Forecasting](06-Screenshots/demand-forecasting.jpeg)
