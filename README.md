@@ -4,7 +4,11 @@
 
 This project showcases a CIO-led Enterprise AI Platform designed to transform traditional manufacturing into a data-driven, intelligent, and predictive operation.
 
-It integrates Predictive Maintenance, Quality AI (Defect Detection), and Demand Forecasting into a unified Executive Control Tower.
+It integrates three business-focused AI capabilities into a unified executive control tower:
+
+- **Predictive Maintenance** for asset reliability and downtime prevention
+- **Defect Detection** for quality improvement and inspection effectiveness
+- **Demand Forecasting** for better planning, inventory alignment, and decision support
 
 ---
 
@@ -12,118 +16,84 @@ It integrates Predictive Maintenance, Quality AI (Defect Detection), and Demand 
 
 Manufacturing organizations often face:
 
-- Unplanned machine downtime  
-- Inconsistent product quality  
-- Poor demand visibility  
-- Siloed data across systems (MES, ERP, IoT)  
+- Unplanned machine downtime
+- Inconsistent product quality
+- Poor demand visibility
+- Siloed operational data across systems such as MES, ERP, and IoT
 
-This platform addresses these challenges by:
-
-- Predicting failures before they happen  
-- Detecting defects early using AI  
-- Forecasting demand for better planning  
-- Providing a unified executive dashboard  
+This platform addresses these challenges by combining operational data, AI-driven insights, and executive-level visualization into one decision-support layer.
 
 ---
 
-## AI Capabilities
+## Platform Modules
 
-### Predictive Maintenance
+### 1. Predictive Maintenance
+This module estimates machine failure probability using operating conditions such as temperature, vibration, pressure, current, and operating hours.
 
-- Machine failure prediction using historical and sensor data  
-- Risk scoring for critical assets  
-- Maintenance prioritization  
+**Business value**
+- Reduce unplanned downtime
+- Prioritize maintenance interventions
+- Improve equipment reliability
+- Support proactive asset management
 
-### Defect Detection (Quality AI)
+### 2. Defect Detection
+This module represents AI-supported quality inspection to detect defects earlier and reduce quality leakage.
 
-- AI-based quality inspection  
-- Pattern recognition for defects  
-- Reduced dependency on manual inspection  
+**Business value**
+- Improve first-pass yield
+- Reduce manual inspection dependency
+- Lower defect escape risk
+- Strengthen quality visibility by production line
 
-### Demand Forecasting
+### 3. Demand Forecasting
+This module compares actual demand and forecast demand to show forecasting accuracy and planning impact.
 
-- Time-series forecasting models  
-- Production planning optimization  
-- Inventory and supply chain alignment  
+**Business value**
+- Improve production planning
+- Reduce inventory imbalance
+- Support supply chain alignment
+- Increase forecast confidence for leadership decisions
 
 ---
 
-## Executive Dashboard (Control Tower)
+## Executive Dashboard Capabilities
 
-- KPI Overview (Downtime, Quality Rate, Forecast Accuracy)  
-- Risk Alerts and AI Predictions  
-- Business Impact Metrics  
-- Cross-functional visibility  
+The Streamlit dashboard provides:
+
+- **Executive Overview** with platform KPI row, module health, and business impact summary
+- **Predictive Maintenance** view with machine-level risk simulation
+- **Defect Detection** view with quality KPIs and inspection trends
+- **Demand Forecasting** view with forecast accuracy and demand comparison
 
 ---
 
-## Architecture Overview
+## KPI Areas Covered
 
-- Data Sources: MES, ERP, IoT Sensors  
-- Data Processing: Pandas, Feature Engineering  
-- AI Models: Scikit-learn / ML Models  
-- Deployment: Streamlit Dashboard  
+- Platform Health Score
+- Failure Risk
+- High-Risk Assets
+- Downtime Cost Exposure
+- Defect Rate
+- Quality Yield
+- Forecast Accuracy
+- Planning / Inventory Uplift
 
 ---
 
 ## Technology Stack
 
-- Python  
-- Pandas / NumPy  
-- Scikit-learn  
-- Streamlit  
-
----
-
-## Business Impact
-
-This platform demonstrates how AI can:
-
-- Reduce unplanned downtime  
-- Improve product quality  
-- Increase forecast accuracy  
-- Enable proactive decision-making  
-- Align IT strategy with business outcomes  
-
----
-
-## CIO Perspective
-
-This is not just a technical project.
-
-It represents how a CIO can:
-
-- Lead enterprise AI transformation  
-- Integrate AI into core business processes  
-- Build scalable digital platforms  
-- Deliver measurable business value  
+- **Python**
+- **Streamlit**
+- **Pandas**
+- **NumPy**
+- **Plotly**
 
 ---
 
 ## How to Run
 
-ip install -r requirements.txt
-streamlit run app.py
+Install dependencies:
 
----
+```bash
+pip install streamlit pandas numpy plotly
 
-## Future Enhancements
-
-- Real-time IoT data integration  
-- Cloud deployment (Azure / AWS)  
-- MLOps pipeline integration  
-- Advanced AI models (Deep Learning / LLM integration)  
-
----
-
-## About
-
-Built by a CIO with 30+ years of IT leadership experience in:
-
-- Smart Manufacturing  
-- Enterprise IT & AI Strategy  
-- Digital Transformation  
-- Data Governance
-- Enterprise Cyber-Security Governance & Policy  
-
-If you find this useful, feel free to star the repository.
