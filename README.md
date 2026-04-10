@@ -55,7 +55,6 @@ This module compares actual demand and forecast demand to show forecasting accur
 - Increase forecast confidence for leadership decisions
 
 ---
-
 ## Executive Dashboard Capabilities
 
 The Streamlit dashboard provides:
@@ -135,6 +134,19 @@ Vincent Eng
 Enterprise CIO | Head of IT | Digital & AI Transformation | Data Strategy | Smart Manufacturing
 
 This repository is part of a broader portfolio focused on CIO-level digital transformation, enterprise architecture, and applied AI for business value.
+
+---
+
+## 🏗️ Enterprise Architecture Overview
+
+This platform demonstrates a CIO-level enterprise architecture integrating smart manufacturing operations with AI-driven decision-making.
+
+- End-to-end data flow from factory floor to executive insights
+- Unified AI platform supporting multiple use cases
+- Secure, scalable, and cloud-ready design
+- Direct alignment with business outcomes (cost, quality, efficiency)
+
+![Architecture Diagram](02-Projects/Enterprise-AI-Platform-for-Smart-Manufacturing/05-Architecture-Diagrams/architecture.png)
 
 ---
 
