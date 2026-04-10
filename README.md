@@ -94,6 +94,46 @@ The Streamlit dashboard provides:
 
 Install dependencies:
 
-```bash
-pip install streamlit pandas numpy plotly
-python -m streamlit run app.py
+''' bash
+- pip install streamlit pandas numpy plotly
+- python -m streamlit run app.py
+
+---
+
+## Repository Structure
+
+- 01-Predictive-Maintenance
+- 02-Defect-Detection
+- 03-Demand-Forecasting
+- 04-Executive Deck
+- 05-Architecture-Diagrams
+- 06-Screenshots
+- images
+- app.py
+- Portfolio_Case_Study.md
+- README.md
+
+---
+
+## CIO Perspective
+
+This is not just a technical demo. It is positioned as a leadership-oriented AI platform showing how a CIO can connect:
+
+- Operational resilience
+- Product quality
+- Demand planning
+- Executive visibility
+- Business value realization
+
+The project demonstrates how AI can be embedded into enterprise transformation, rather than treated as isolated experimentation.###
+
+---
+
+### Author Positioning
+
+Vincent Eng
+Enterprise CIO | Head of IT | Digital & AI Transformation | Data Strategy | Smart Manufacturing
+
+This repository is part of a broader portfolio focused on CIO-level digital transformation, enterprise architecture, and applied AI for business value.
+
+---
