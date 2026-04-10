@@ -96,4 +96,4 @@ Install dependencies:
 
 ```bash
 pip install streamlit pandas numpy plotly
-
+python -m streamlit run app.py
