@@ -137,3 +137,16 @@ Enterprise CIO | Head of IT | Digital & AI Transformation | Data Strategy | Smar
 This repository is part of a broader portfolio focused on CIO-level digital transformation, enterprise architecture, and applied AI for business value.
 
 ---
+## Screenshots
+
+### Executive Overview
+![Executive Overview](06-Screenshots/executive_overview.png)
+
+### Predictive Maintenance
+![Predictive Maintenance](06-Screenshots/predictive_maintenance.png)
+
+### Defect Detection
+![Defect Detection](06-Screenshots/defect_detection.png)
+
+### Demand Forecasting
+![Demand Forecasting](06-Screenshots/demand_forecasting.png)
