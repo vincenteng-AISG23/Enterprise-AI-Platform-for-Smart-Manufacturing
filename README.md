@@ -146,7 +146,7 @@ This platform demonstrates a CIO-level enterprise architecture integrating smart
 - Secure, scalable, and cloud-ready design
 - Direct alignment with business outcomes (cost, quality, efficiency)
 
-![Architecture Diagram](05-Architecture-Diagrams/architecture.png)
+![Architecture Diagram](02-Projects/Enterprise-AI-Platform-for-Smart-Manufacturing/05-Architecture-Diagrams/architecture.png)
 
 ---
 
